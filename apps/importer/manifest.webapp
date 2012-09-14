@@ -1,0 +1,16 @@
+{
+  "name": "Importer",
+  "description": "Import your contacts to Firefox OS",
+  "launch_path": "/index.html",
+  "developer": {
+    "name": "The Gaia Team",
+    "url": "https://github.com/mozilla-b2g/gaia"
+  },
+  "permissions": [
+    "contacts"
+  ],
+  "default_locale": "en-US",
+  "icons": {
+    "128": "/style/icons/Blank.png"
+  }
+}
