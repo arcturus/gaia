@@ -15,12 +15,25 @@
     </header>
   </section>
   <section role="region" class="skin-dark">
-    <h2 class="bb-docs">Got the token</h2>
-    <p role="status">
-       <span>80%</span>
-        <progress max="100" value="80"></progress>
+    <p id='progress' data-theme="dark" role="status">
+      <progress></progress>
+      <span>Loading contacts from server</span>
     </p>
-    <ul id='contactsList'>
+    <div id='import' class='container hide'>
+      <h2 class='bb-docs'></h2>
+      <button onclick='google.contacts.importContacts()'>Import contacts</button>
+    </div>
+
+    <div id='import_progress' class='container hide'>
+      <h2 class='bb-docs'>Importing contacts</h2>
+      <p data-theme="dark" role="status">
+        <span>0%</span>
+        <progress max="100" value="0"></progress>
+      </p>
+      <button onclick='google.ui.showImportedContacts()' class='hide'> Show imported contacts</button>
+    </div>
+
+    <ul id='contactsList' class='hide'>
       
     </ul>
   </section>
