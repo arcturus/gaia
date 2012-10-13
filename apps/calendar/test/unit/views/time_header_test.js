@@ -69,27 +69,81 @@ suite('views/time_header', function() {
     assert.ok(subject.title);
   });
 
-  test('#monthScaleTitle', function() {
-    var out = subject.monthScaleTitle();
+  test('#getScale', function() {
+    var out = subject.getScale('month');
     assert.deepEqual(
       out,
       monthTitle
     );
   });
 
+  // When week starts in one month
+  // and ends in another we need
+  // 'Month1 Month2 Year' like header.
+  test('#getScale for week', function() {
+    controller.move(new Date(2012, 0, 30));
+    var firstMonth = fmt.localeFormat(
+      new Date(2012, 0, 30),
+      '%B'
+    );
+
+    var secondMonth = fmt.localeFormat(
+      new Date(2012, 1, 1),
+      '%B %Y'
+    );
+    var out = subject.getScale('week');
+    assert.include(out, firstMonth);
+    assert.include(out, secondMonth);
+  });
+
   test('#_updateTitle', function() {
     subject._updateTitle();
     assert.equal(
       subject.title.textContent,
-      subject.monthScaleTitle()
+      subject.getScale('month')
     );
   });
 
-  test('controller: monthChange event', function() {
-    var date = new Date(2012, 5, 1);
-    var out = fmt.localeFormat(date, '%B %Y');
-    controller.move(date);
-    assert.deepEqual(subject.title.textContent, out);
+  suite('changing scales', function() {
+
+    var calledWith;
+
+    setup(function() {
+      controller.move(date);
+      controller.scale = 'year';
+
+      subject._updateTitle = function() {
+        calledWith = arguments;
+      }
+      // setup initial scale
+      subject.render();
+      calledWith = null;
+    });
+
+    test('initial change', function() {
+      controller.move(new Date(
+        date.getFullYear(),
+        1
+      ));
+
+      assert.ok(!calledWith, 'dont re-render out of scale');
+      controller.move(new Date(2020, 1));
+      assert.ok(calledWith);
+    });
+
+    test('change scale', function() {
+      controller.scale = 'month';
+      assert.ok(calledWith);
+      calledWith = null;
+
+      controller.move(new Date(
+        date.getFullYear(),
+        date.getMonth() + 1
+      ));
+
+      assert.ok(calledWith);
+    });
+
   });
 
 });

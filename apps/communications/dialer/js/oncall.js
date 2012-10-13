@@ -80,15 +80,13 @@ var CallScreen = {
 
   showKeypad: function cs_showKeypad() {
     KeypadManager.render('oncall');
-
-    KeypadManager.formatPhoneNumber('on-call');
-
-    KeypadManager.phoneNumberView.value = KeypadManager._phoneNumber;
-    KeypadManager.moveCaretToEnd(KeypadManager.phoneNumberView);
     this.views.classList.add('show');
   },
 
   hideKeypad: function cs_hideKeypad() {
+    KeypadManager.restorePhoneNumber();
+    KeypadManager.restoreAdditionalContactInfo();
+    KeypadManager.formatPhoneNumber();
     this.views.classList.remove('show');
   },
 
@@ -127,7 +125,9 @@ var CallScreen = {
   },
 
   showIncoming: function cs_showIncoming() {
-    this.hideKeypad();
+    // Hiding the keypad
+    this.views.classList.remove('show');
+
     this.callToolbar.classList.add('transparent');
     this.incomingContainer.classList.add('displayed');
   },
@@ -164,7 +164,7 @@ var OnCallHandler = (function onCallHandler() {
 
   /* === Settings === */
   var activePhoneSound = true;
-  SettingsListener.observe('phone.ring.incoming', true, function(value) {
+  SettingsListener.observe('ring.enabled', true, function(value) {
     activePhoneSound = !!value;
   });
 
@@ -179,14 +179,22 @@ var OnCallHandler = (function onCallHandler() {
     }
   });
 
+  // Setting up the SimplePhoneMatcher
+  var conn = window.navigator.mozMobileConnection;
+  if (conn) {
+    SimplePhoneMatcher.mcc = conn.voice.network.mcc.toString();
+  }
+
   var ringtonePlayer = new Audio();
   ringtonePlayer.src = selectedPhoneSound;
   ringtonePlayer.loop = true;
 
   var activateVibration = true;
-  SettingsListener.observe('phone.vibration.incoming', false, function(value) {
+  SettingsListener.observe('vibration.enabled', true, function(value) {
     activateVibration = !!value;
   });
+
+  var screenLock;
 
   /* === Setup === */
   function setup() {
@@ -194,6 +202,7 @@ var OnCallHandler = (function onCallHandler() {
     toggleScreen();
 
     ProximityHandler.enable();
+    screenLock = navigator.requestWakeLock('screen');
 
     if (telephony) {
       // Somehow the muted property appears to true after initialization.
@@ -216,14 +225,12 @@ var OnCallHandler = (function onCallHandler() {
   function onCallsChanged() {
     // Adding any new calls to handledCalls
     telephony.calls.forEach(function callIterator(call) {
-      if (call.state == 'incoming' || call.state == 'dialing') {
-        var alreadyAdded = handledCalls.some(function hcIterator(hc) {
-          return (hc.call == call);
-        });
+      var alreadyAdded = handledCalls.some(function hcIterator(hc) {
+        return (hc.call == call);
+      });
 
-        if (!alreadyAdded) {
-          addCall(call);
-        }
+      if (!alreadyAdded) {
+        addCall(call);
       }
     });
 
@@ -250,6 +257,7 @@ var OnCallHandler = (function onCallHandler() {
 
     // No more room
     if (handledCalls.length >= CALLS_LIMIT) {
+      new HandledCall(call);
       call.hangUp();
       return;
     }
@@ -302,8 +310,6 @@ var OnCallHandler = (function onCallHandler() {
   }
 
   function handleFirstIncoming(call) {
-    var screenLock = navigator.requestWakeLock('screen');
-
     var vibrateInterval = 0;
     if (activateVibration) {
       vibrateInterval = window.setInterval(function vibrate() {
@@ -325,11 +331,6 @@ var OnCallHandler = (function onCallHandler() {
       ringing = false;
 
       window.clearInterval(vibrateInterval);
-
-      if (screenLock) {
-        screenLock.unlock();
-        screenLock = null;
-      }
 
       // The call wasn't picked up
       if (call.state == 'disconnected') {
@@ -393,6 +394,10 @@ var OnCallHandler = (function onCallHandler() {
       return;
 
     ProximityHandler.disable();
+    if (screenLock) {
+      screenLock.unlock();
+      screenLock = null;
+    }
 
     closing = true;
 
@@ -514,7 +519,7 @@ window.addEventListener('localized', function callSetup(evt) {
   // <body> children are hidden until the UI is translated
   document.body.classList.remove('hidden');
 
-  KeypadManager.init();
+  KeypadManager.init(true);
   CallScreen.init();
   CallScreen.syncSpeakerEnabled();
   OnCallHandler.setup();

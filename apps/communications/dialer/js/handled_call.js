@@ -6,12 +6,6 @@ function HandledCall(aCall, aNode) {
 
   this.call = aCall;
 
-  this.node = aNode;
-  this.durationNode = aNode.querySelector('.duration span');
-  this.directionNode = aNode.querySelector('.duration .direction');
-  this.numberNode = aNode.querySelector('.number');
-  this.additionalInfoNode = aNode.querySelector('.additionalContactInfo');
-
   aCall.addEventListener('statechange', this);
 
   this.recentsEntry = {
@@ -19,6 +13,18 @@ function HandledCall(aCall, aNode) {
     type: this.call.state,
     number: this.call.number
   };
+
+  this._initialState = this.call.state;
+
+  if (!aNode)
+    return;
+
+  this.node = aNode;
+  this.durationNode = aNode.querySelector('.duration span');
+  this.directionNode = aNode.querySelector('.duration .direction');
+  this.numberNode = aNode.querySelector('.number');
+  this.additionalInfoNode = aNode.querySelector('.additionalContactInfo');
+
 
   this.updateCallNumber();
 
@@ -28,8 +34,12 @@ function HandledCall(aCall, aNode) {
                          _('incoming') : _('calling');
   this.durationNode.textContent = durationMessage + '…';
 
-  this._initialState = this.call.state;
   this.updateDirection();
+
+  // Some calls might be already connected
+  if (this._initialState === 'connected') {
+    this.connected();
+  }
 }
 
 HandledCall.prototype.handleEvent = function hc_handle(evt) {
@@ -79,17 +89,19 @@ HandledCall.prototype.updateCallNumber = function hc_updateCallNumber() {
   var voicemail = navigator.mozVoicemail;
   if (voicemail) {
     if (voicemail.number == number) {
-      node.textContent = voicemail.displayName;
+      node.textContent = voicemail.displayName ?
+        voicemail.displayName : number;
       return;
     }
   }
 
   var self = this;
-  Contacts.findByNumber(number, function lookupContact(contact) {
+  Contacts.findByNumber(number, function lookupContact(contact, matchingTel) {
     if (contact && contact.name) {
       node.textContent = contact.name;
-      var additionalInfo = Utils.getPhoneNumberAdditionalInfo(
-        number, contact);
+      KeypadManager.formatPhoneNumber('right');
+      var additionalInfo = Utils.getPhoneNumberAdditionalInfo(matchingTel,
+                                                              contact);
       additionalInfoNode.textContent = additionalInfo ?
         additionalInfo : '';
       if (contact.photo && contact.photo.length > 0) {
@@ -105,27 +117,34 @@ HandledCall.prototype.updateCallNumber = function hc_updateCallNumber() {
 
 HandledCall.prototype.updateDirection = function hc_updateDirection() {
   var className;
-  if (this._initialState == 'dialing') {
-    className = (this.call.state == 'connected') ? 'ongoing-out' : 'outgoing';
-  } else {
+  if (this._initialState == 'incoming') {
     className = (this.call.state == 'connected') ? 'ongoing-in' : 'incoming';
+  } else {
+    className = (this.call.state == 'connected') ? 'ongoing-out' : 'outgoing';
   }
 
   this.directionNode.classList.add(className);
 };
 
 HandledCall.prototype.remove = function hc_remove() {
+  this.call.removeEventListener('statechange', this);
+
+  if (!this.node)
+    return;
+
   clearInterval(this._ticker);
   this._ticker = null;
-
-  this.call.removeEventListener('statechange', this);
 
   this.node.hidden = true;
 };
 
 HandledCall.prototype.connected = function hc_connected() {
-  this.node.hidden = false;
   this.recentsEntry.type += '-connected';
+
+  if (!this.node)
+    return;
+
+  this.node.hidden = false;
   this.node.classList.remove('held');
 
   this.startTimer();
@@ -148,6 +167,10 @@ HandledCall.prototype.disconnected = function hc_disconnected() {
       });
     });
   }
+
+  if (!this.node)
+    return;
+
   CallScreen.unmute();
   CallScreen.turnSpeakerOff();
   this.remove();

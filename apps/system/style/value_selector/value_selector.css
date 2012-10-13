@@ -1,9 +1,20 @@
 #value-selector {
-  position: absolute;
-  top: 2rem;
-  bottom: 0;
-  left: 0;
   width: 100%;
+  height: -moz-calc(100% - 20px);
+  top: 20px;
+  left: 0;
+  position: absolute;
+}
+
+#screen.active-statusbar #value-selector {
+  height: -moz-calc(100% - 40px);
+  top: 40px;
+}
+
+#screen:-moz-full-screen-ancestor #value-seletcor,
+#screen.fullscreen-app #value-selector {
+  height: 100%;
+  top: 0;
 }
 
 #select-options-buttons,
@@ -28,7 +39,8 @@
     margin-right: 0rem;
 }
 
-#value-selector button {
+#select-options-buttons button,
+#time-picker-buttons button{
   /* from building block - other/buttons/style.css*/
   width: calc((100% - 4.5rem) / 2);  /*overridden for 2 buttons*/
 
@@ -44,7 +56,7 @@
   border: 1px solid #9f9f9f;
   border-radius: 0.3rem;
   font-size: 1.6rem;
-  font-family: 'Open Sans', Sans-serif;
+  font-family: 'MozTT', Sans-serif;
   font-weight: 600;
   line-height: 3.8rem;
   color: #333;
@@ -93,12 +105,12 @@ button.affirmative.active {
   bottom: 0;
   white-space: nowrap;
   padding: 0 0 7rem;  /*remove the top padding*/
-  font-family: "Open Sans", Sans-serif;
+  font-family: "MozTT", Sans-serif;
   color: #fff;
 }
 
 #time-picker-popup h3 {
-    font-family: 'Open Sans', Sans-serif;
+    font-family: 'MozTT', Sans-serif;
     font-weight: normal;
     font-size: 1.6rem;
     line-height: 1em;

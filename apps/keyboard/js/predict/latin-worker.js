@@ -229,9 +229,6 @@ function MapCodesToBaseLetters(codes, length) {
 // ab -> promote words that start with 'ab'
 const PrefixMatchMultiplier = 3;
 
-// promote words when case of first character matches
-const CaseMatchMultiplier = 2;
-
 // words where accidentaly the wrong key was pressed
 // qas -> was
 // w - neighbourKeys [q,e,a,s,d]
@@ -254,19 +251,13 @@ const RankCandidate = (function() {
     var rank = cand.freq;
     var length = cand.word.length;
     var rankMultiplier = cand.rankMultiplier;
+    var candWord = cand.word;
 
     // rank words with smaller edit distance higher up
     // e.g. editdistance = 1, then fact = 1.9
     //      editdistance = 2, then fact = 1.8
     var factor = 1 + ((10 - Math.min(9, cand.distance)) / 10);
     rank *= factor;
-
-    // promote candidates where case of first character matches.
-    // e.g. A - Africa
-    //      a - and
-    if (word.charCodeAt(0) == cand.word.charCodeAt(0)) {
-      rank *= CaseMatchMultiplier;
-    }
 
     // take input length into account
     // length = 1 then fact = 1.1
@@ -292,7 +283,7 @@ function Check(input, prefixes, candidates, rankMultiplier) {
   // you change one without the other this will break very badly.
   var h1 = 0;
   var h2 = 0xdeadbeef;
-  for (var n = 0; n < input.length; ++n) {
+  for (var n = 0, len = input.length; n < len; ++n) {
     var ch = input[n];
     h1 = h1 * 33 + ch;
     h1 = h1 & 0xffffffff;
@@ -333,7 +324,7 @@ function EditDistance1(input, prefixes, candidates) {
 function Omission1Candidates(input, prefixes, candidates) {
   var length = Math.min(input.length, _prefixLimit - 1);
   var input2 = Uint32Array(length + 1);
-  for (var n = 1; n <= length; ++n) {
+  for (var n = 0; n <= length; ++n) {
     for (var i = 0; i < n; ++i)
       input2[i] = input[i];
     while (i < length)
@@ -452,20 +443,23 @@ function GetPrefix(word) {
   // Limit search by prefix to avoid long lookup times.
   var prefix = word.substr(0, _prefixLimit);
   var result = '';
-  for (var n = 0; n < prefix.length; ++n)
+  for (var n = 0, len = prefix.length; n < len; ++n)
     result += String.fromCharCode(_charMap[prefix.charCodeAt(n)]);
   return result;
 }
 
 function maintainTopCandidates(topCandidates, candidate) {
-  for (var i = 0, len = topCandidates.length; i < len; ++i) {
-    if (topCandidates[i].word == candidate.word)
+  var length = topCandidates.length;
+  var index = length;
+  for (var i = length - 1; i >= 0; i--) {
+    if (candidate.word == topCandidates[i].word)
       return;
+    if (candidate.rank > topCandidates[i].rank)
+      index = i;
   }
-  topCandidates.push(candidate);
-  topCandidates.sort(function(a, b) {
-    return b.rank - a.rank;
-  });
+  if (index >= _maxSuggestions)
+    return;
+  topCandidates.splice(index, 0, candidate);
   if (topCandidates.length > _maxSuggestions)
     topCandidates.length = _maxSuggestions;
 }
@@ -516,14 +510,16 @@ function Predict(word) {
   var input = String2Codes(new Uint32Array(prefix.length), prefix);
   var prefixes = new Set();
   Check(input, prefixes, candidates, PrefixMatchMultiplier);
-  EditDistance1(input, prefixes, candidates);
-  Omission1Candidates(input, prefixes, candidates);
-  Deletion1Candidates(input, prefixes, candidates);
-  TranspositionCandidates(input, prefixes, candidates);
+  if (word.length > 1) {
+    EditDistance1(input, prefixes, candidates);
+    Omission1Candidates(input, prefixes, candidates);
+    Deletion1Candidates(input, prefixes, candidates);
+    TranspositionCandidates(input, prefixes, candidates);
+  }
 
   var finalCandidates = [];
   // Sort the candidates by Levenshtein distance and rank.
-  for (var n = 0; n < candidates.length; ++n) {
+  for (var n = 0, len = candidates.length; n < len; ++n) {
     var candidate = candidates[n];
 
     // Skip candidates equal to input and shorter candidates
@@ -540,19 +536,31 @@ function Predict(word) {
 
 var PredictiveText = {
   key: function PTW_key(keyCode, keyX, keyY) {
+    if (keyCode == 32) {
+      self.postMessage({ cmd: 'sendCandidates', args: [[]] });
+      _currentWord = '';
+      return;
+    }
     if (keyCode == 8) {
       _currentWord = _currentWord.substr(0, _currentWord.length - 1);
     } else {
       _currentWord += String.fromCharCode(keyCode);
     }
     var wordList = [];
-    var spaceIndex = _currentWord.lastIndexOf(' ');
-    spaceIndex = spaceIndex > 0 ? (spaceIndex + 1) : 0;
-    if (_currentWord.substring(spaceIndex).length > 0) {
-      var candidates = Predict(_currentWord.substring(spaceIndex));
-      for (var n = 0; n < candidates.length; ++n) {
+    if (_currentWord.length > 0) {
+      var candidates = Predict(_currentWord);
+      var capitalize = (_currentWord[0] === _currentWord[0].toUpperCase());
+      for (var n = 0, len = candidates.length; n < len; ++n) {
         var word = candidates[n].word;
-        wordList.push([word, word]);
+        if (capitalize) {
+          word = word[0].toUpperCase() + word.substring(1);
+        }
+
+        // For some reason ../render.js expects two copies here.
+        // It displays the first one, but actually inserts the second one.
+        // Maybe this is required for asian input methods. We use it to
+        // add a space after suggestions
+        wordList.push([word, word + ' ']);
       }
     }
     self.postMessage({ cmd: 'sendCandidates', args: [wordList] });

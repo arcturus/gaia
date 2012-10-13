@@ -89,22 +89,57 @@ var Applications = (function() {
 
   installer.oninstall = function install(event) {
     var app = event.application;
-    if (!installedApps[app.origin]) {
-      installedApps[app.origin] = app;
+    if (installedApps[app.origin])
+      return;
 
-      var icon = getIcon(app.origin);
-      // No need to put data: URIs in the cache
-      if (icon && icon.indexOf('data:') == -1) {
-        try {
-          window.applicationCache.mozAdd(icon);
-        } catch (e) {}
-      }
+    installedApps[app.origin] = app;
 
+    var fireCallbacks = function() {
       callbacks.forEach(function(callback) {
         if (callback.type == 'install') {
           callback.callback(app);
         }
       });
+    }
+
+    var icon = getIcon(app.origin);
+
+    // No need to put data: URIs in the cache
+    if (!icon || icon.indexOf('data:') != -1) {
+      fireCallbacks();
+      return;
+    }
+
+    // Download the application icon and assign it as an attribute of
+    // the manifest. As a side effect the icon will be store in the
+    // application database. Should it be an explicit method instead?
+    var xhr = new XMLHttpRequest({mozSystem: true});
+    xhr.open('GET', icon, true);
+    xhr.responseType = 'blob';
+    xhr.send(null);
+
+    xhr.onreadystatechange = function saveIcon_readyStateChange(evt) {
+      if (xhr.readyState != 4) {
+        return;
+      }
+
+      if (xhr.status == 0 || xhr.status == 200) {
+        var fileReader = new FileReader();
+        fileReader.onload = function fileReader_load(evt) {
+          cacheIcon(app.origin, evt.target.result);
+          fireCallbacks();
+        }
+        fileReader.readAsDataURL(xhr.response);
+      } else {
+        // 404 is not an error is the xhr world, so let's make sure
+        // the application is shown on the homescreen even if the icon
+        // does not appears.
+        fireCallbacks();
+      }
+    }
+
+    xhr.onerror = function saveIcon_onerror() {
+      fireCallbacks();
     }
   };
 
@@ -129,8 +164,6 @@ var Applications = (function() {
     if (app) {
       return app;
     }
-
-    // XXX We are affected by the port!
 
     // Trailing '/'
     var trimmedOrigin = origin.slice(0, origin.length - 1);
@@ -171,6 +204,13 @@ var Applications = (function() {
     return app ? app.manifest : null;
   };
 
+  function cacheIcon(origin, icon) {
+    var manifest = getManifest(origin);
+    if (manifest && icon) {
+      manifest._icon = icon;
+    }
+  };
+
   /*
    *  Returns true if it's a core application
    *
@@ -184,13 +224,27 @@ var Applications = (function() {
   var deviceWidth = document.documentElement.clientWidth;
 
   /*
-   *  Returns the size of the icon
+   *  Returns the preferred size of the icon
    *
-   *  {Array} Sizes orderer largest to smallest
+   *  {Array} All sizes of the icon
+   *  {Number} Preferred icon size
    *
    */
-  function getIconSize(sizes) {
-    return sizes[(deviceWidth < 480) ? sizes.length - 1 : 0];
+  function getPreferredSize(icons, preferredSize) {
+    var result = Number.MAX_VALUE;
+    var max = 0;
+
+    Object.keys(icons).forEach(function(str) {
+      var size = parseInt(str, 10);
+      if (size > max)
+        max = size;
+
+      if (size >= preferredSize && size < result)
+        result = size;
+    });
+    // If there is an icon matching the preferred size, we return the result,
+    // if there isn't, we will return the maximum available size.
+    return (result === Number.MAX_VALUE) ? max : result;
   }
 
   /*
@@ -215,16 +269,12 @@ var Applications = (function() {
       return 'style/images/default.png';
     }
 
-    var sizes = Object.keys(icons).map(function parse(str) {
-      return parseInt(str, 10);
-    });
-    sizes.sort(function(x, y) { return y - x; });
-
     // If the icons is not fully-qualifed URL, add the origin of the
     // application to it (technically, manifests are supposed to
     // have those). Otherwise return the url directly as it could be
     // a data: url.
-    var icon = icons[getIconSize(sizes)];
+    var PREFERRED_ICON_SIZE = 64;
+    var icon = icons[getPreferredSize(icons, PREFERRED_ICON_SIZE)];
     if ((icon.indexOf('data:') !== 0) &&
         (icon.indexOf('http://') !== 0) &&
         (icon.indexOf('https://') !== 0)) {
@@ -270,23 +320,24 @@ var Applications = (function() {
   }
 
   function installBookmark(bookmark) {
-    if (!installedApps[bookmark.origin]) {
-      installedApps[bookmark.origin] = bookmark;
-
-      var icon = getIcon(bookmark.origin);
-      // No need to put data: URIs in the cache
-      if (icon && icon.indexOf('data:') == -1) {
-        try {
-          window.applicationCache.mozAdd(icon);
-        } catch (e) {}
-      }
-
-      callbacks.forEach(function(callback) {
-        if (callback.type == 'install') {
-          callback.callback(bookmark);
-        }
-      });
+    if (installedApps[bookmark.origin]) {
+      return;
     }
+    installedApps[bookmark.origin] = bookmark;
+
+    var icon = getIcon(bookmark.origin);
+    // No need to put data: URIs in the cache
+    if (icon && icon.indexOf('data:') == -1) {
+      try {
+        window.applicationCache.mozAdd(icon);
+      } catch (e) {}
+    }
+
+    callbacks.forEach(function(callback) {
+      if (callback.type == 'install') {
+        callback.callback(bookmark);
+      }
+    });
   }
 
   function addBookmark(bookmark) {
@@ -301,6 +352,10 @@ var Applications = (function() {
     }
   }
 
+  function isInstalled(origin) {
+    return installedApps[origin];
+  }
+
   return {
     launch: launch,
     isCore: isCore,
@@ -310,11 +365,13 @@ var Applications = (function() {
     getOrigin: getOrigin,
     getName: getName,
     getIcon: getIcon,
+    cacheIcon: cacheIcon,
     getManifest: getManifest,
     getInstalledApplications: getInstalledApplications,
     isReady: isReady,
     addBookmark: addBookmark,
     deleteBookmark: deleteBookmark,
-    installBookmark: installBookmark
+    installBookmark: installBookmark,
+    isInstalled: isInstalled
   };
 })();
