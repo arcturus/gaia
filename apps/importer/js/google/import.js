@@ -111,22 +111,8 @@ google.auth = function auth() {
     request.send();
   };
 
-  var init = function init() {
-    if (window.location.hash.indexOf('access_token') == -1) {
-      return false;
-    }
-
-    var paramsString = window.location.hash.slice(1);
-    var params = paramsString.split('&');
-    for (var i = 0; i < params.length; i++) {
-      var param = params[i].split('=');
-      if (param[0] == 'access_token') {
-        accessToken = param[1];
-        return true;
-      }
-    }
-
-    return false;
+  var init = function init(at) {
+    accessToken = at;
   };
 
   var getAccessToken = function getAccessToken() {
@@ -335,6 +321,3 @@ function ContactsSaver(data) {
     }
   }
 }
-
-google.auth.init();
-google.contacts.fetchContacts();
