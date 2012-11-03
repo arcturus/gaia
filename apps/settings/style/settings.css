@@ -239,9 +239,10 @@ label[for^="pwd"] {
  */
 
 .tone-select {
-  width: 60%;
+  width: 50%;
   position: absolute;
-  right: 0;
+  right: 1rem;
+  left: auto;
 }
 
 
@@ -310,5 +311,13 @@ ul li > label .range-icons.brightness {
 #clock-date,
 #clock-time {
   pointer-events: none;
+}
+
+/******************************************************************************
+ * Improve Firefox OS
+ */
+
+#improve-firefox-os .link-text {
+  white-space: nowrap;
 }
 

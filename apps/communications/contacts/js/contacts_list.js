@@ -132,10 +132,6 @@ contacts.List = (function() {
     });
     body.dataset['search'] = normalizeText(searchInfo.join(' '));
     body.appendChild(name);
-    var small = document.createElement('small');
-    small.className = 'block-company';
-    small.textContent = contact.org;
-    body.appendChild(small);
 
     // Label the contact concerning social networks
     if (contact.category) {
@@ -150,6 +146,11 @@ contacts.List = (function() {
         });
       }
     }
+
+    var small = document.createElement('small');
+    small.className = 'block-company';
+    small.textContent = contact.org;
+    body.appendChild(small);
 
     link.appendChild(body);
     contactContainer.appendChild(link);
@@ -254,7 +255,7 @@ contacts.List = (function() {
   };
 
   var toggleNoContactsScreen = function cl_toggleNoContacs(show) {
-    if (show) {
+    if (show && !ActivityHandler.currentlyHandling) {
       noContacts.classList.remove('hide');
       return;
     }
@@ -284,7 +285,7 @@ contacts.List = (function() {
     // from the 'start' param
     var i = start || 0;
     var length = container.children.length;
-    while (length != i) {
+    while (length > i) {
       var current = container.children[i];
       container.removeChild(current);
       length = container.children.length;
@@ -332,7 +333,7 @@ contacts.List = (function() {
       return;
     }
 
-    var sortBy = orderByLastName ? 'givenName' : 'familiyName';
+    var sortBy = orderByLastName ? 'familyName' : 'givenName';
     var options = {
       sortBy: sortBy,
       sortOrder: 'ascending'

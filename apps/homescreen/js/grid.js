@@ -77,33 +77,48 @@ const GridManager = (function() {
         var startX = startEvent.clientX;
         var forward = deltaX > 0;
 
-        var refresh = function(e) {
-          if (deltaX >= 0) {
-            previous.MozTransform =
-              translate.replace('$', -windowWidth + deltaX);
-
-            // If we change direction make sure there isn't any part
-            // of the page on the other side that stays visible.
-            if (!forward) {
-              forward = true;
-              next.MozTransform =
-                translate.replace('$', windowWidth);
+        var refresh;
+        if (index === 0) {
+          refresh = function(e) {
+            if (deltaX <= 0) {
+              next.MozTransform = translate.replace('$', windowWidth + deltaX);
+              current.MozTransform = translate.replace('$', deltaX);
             }
-          } else {
-            next.MozTransform =
-              translate.replace('$', windowWidth + deltaX);
-
-            // If we change direction make sure there isn't any part
-            // of the page on the other side that stays visible.
-            if (forward) {
-              forward = false;
+          };
+        } else if (index === pages.length - 1) {
+          refresh = function(e) {
+            if (deltaX >= 0) {
               previous.MozTransform =
-                translate.replace('$', -windowWidth);
+                translate.replace('$', -windowWidth + deltaX);
+              current.MozTransform = translate.replace('$', deltaX);
             }
-          }
+          };
+        } else {
+          refresh = function(e) {
+            if (deltaX >= 0) {
+              previous.MozTransform =
+                translate.replace('$', -windowWidth + deltaX);
 
-          current.MozTransform = translate.replace('$', deltaX);
-        };
+              // If we change direction make sure there isn't any part
+              // of the page on the other side that stays visible.
+              if (!forward) {
+                forward = true;
+                next.MozTransform = translate.replace('$', windowWidth);
+              }
+            } else {
+              next.MozTransform = translate.replace('$', windowWidth + deltaX);
+
+              // If we change direction make sure there isn't any part
+              // of the page on the other side that stays visible.
+              if (forward) {
+                forward = false;
+                previous.MozTransform = translate.replace('$', -windowWidth);
+              }
+            }
+
+            current.MozTransform = translate.replace('$', deltaX);
+          };
+        }
 
         // Generate a function accordingly to the current page position.
         if (Homescreen.isInEditMode() || currentPage > 2) {
@@ -210,15 +225,17 @@ const GridManager = (function() {
 
   function togglePagesVisibility(start, end) {
     for (var i = 0; i < pages.length; i++) {
+      var pagediv = pages[i].container;
       if (i < start || i > end) {
-        pages[i].container.style.display = 'none';
+        pagediv.style.display = 'none';
       } else {
-        pages[i].container.style.display = 'block';
+        pagediv.style.display = 'block';
       }
     }
   }
 
   function goToPage(index, callback) {
+    document.location.hash = (index == 1 ? 'root' : '');
     if (index < 0 || index >= pages.length)
       return;
 
@@ -228,8 +245,8 @@ const GridManager = (function() {
         callback();
       }
 
-      previousPage.container.dispatchEvent(new CustomEvent('pagehide'));
-      newPage.container.dispatchEvent(new CustomEvent('pageshow'));
+      previousPage.container.dispatchEvent(new CustomEvent('gridpagehideend'));
+      newPage.container.dispatchEvent(new CustomEvent('gridpageshowend'));
       togglePagesVisibility(index, index);
     }
 
@@ -263,6 +280,8 @@ const GridManager = (function() {
     // still considered display: none;
     newPage.container.getBoundingClientRect();
 
+    previousPage.container.dispatchEvent(new CustomEvent('gridpagehidestart'));
+    newPage.container.dispatchEvent(new CustomEvent('gridpageshowstart'));
     previousPage.moveByWithEffect(-forward * windowWidth,
                                   kPageTransitionDuration);
     newPage.moveByWithEffect(0, kPageTransitionDuration);
@@ -321,11 +340,19 @@ const GridManager = (function() {
             }
           }
           HomeState.saveShortcuts(init.dock);
+
+          for (var i = apps.length - 1; i >= 0; i--) {
+            if (init.hidden.indexOf(apps[i]['origin']) != -1) {
+              apps.splice(i, 1);
+            }
+          }
+          HomeState.saveHiddens(init.hidden);
+
         } catch (e) {
           dump('Failed parsing homescreen configuration file: ' + e + '\n');
         }
 
-       var max = pageHelper.getMaxPerPage();
+        var max = pageHelper.getMaxPerPage();
         var list = [];
         for (var i = 0; i < apps.length; i++) {
           list.push(apps[i]);
@@ -387,12 +414,22 @@ const GridManager = (function() {
             }
           }
 
-          for (var origin in installedApps) {
-            GridManager.install(installedApps[origin]);
-          }
+          HomeState.getHiddens(function(hidden) {
+            var len = hidden.length;
+            for (var i = 0; i < len; i++) {
+              var origin = hidden[i].origin || hidden[i];
+              if (origin in installedApps) {
+                delete installedApps[origin];
+              }
+            }
 
-          updatePaginationBar();
-          finish();
+            for (var origin in installedApps) {
+              GridManager.install(installedApps[origin]);
+            }
+
+            updatePaginationBar();
+            finish();
+          });
         });
       },
       function onerror() {

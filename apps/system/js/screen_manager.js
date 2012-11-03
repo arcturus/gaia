@@ -46,6 +46,7 @@ var ScreenManager = {
    * sync with setting 'screen.brightness'
   */
   _userBrightness: 1,
+  _savedBrightness: 1,
 
   /*
    * Wait for _dimNotice milliseconds during idle-screen-off
@@ -93,8 +94,9 @@ var ScreenManager = {
     // When idled, trigger the idle-screen-off process
     this.idleObserver.onidle = function scm_onidle() {
       self._idled = true;
-      if (!self._screenWakeLocked)
+      if (!self._screenWakeLocked && self.isIdleSinceLastScreenOn()) {
         self.turnScreenOff(self._instantIdleOff);
+      }
     };
 
     // When active, cancel the idle-screen-off process & off-transition
@@ -156,8 +158,8 @@ var ScreenManager = {
         // This is a rather naive but pretty effective heuristic
         var brightness =
           Math.max(Math.min((evt.value / 1100), this._userBrightness), 0.1);
-        this.setScreenBrightness(brightness, false);
-
+        if (Math.abs(this._targetBrightness - brightness) > 0.3)
+          this.setScreenBrightness(brightness, false);
         break;
 
       case 'sleep':
@@ -183,6 +185,11 @@ var ScreenManager = {
       return false;
 
     var self = this;
+
+    // Remember the current screen brightness. We will restore it when
+    // we turn the screen back on.
+    self._savedBrightness = navigator.mozPower.screenBrightness;
+
     var screenOff = function scm_screenOff() {
       self.setIdleTimeout(0);
 
@@ -221,13 +228,14 @@ var ScreenManager = {
       return false;
 
     // Set the brightness before the screen is on.
-    this.setScreenBrightness(this._userBrightness, instant);
+    this.setScreenBrightness(this._savedBrightness, instant);
 
     // Actually turn the screen on.
     var power = navigator.mozPower;
     if (power)
       power.screenEnabled = true;
 
+    this._lastScreenOnTimestamp = Date.now();
     this.screenEnabled = true;
     this.screen.classList.remove('screenoff');
 
@@ -344,6 +352,16 @@ var ScreenManager = {
     this._instantIdleOff = instant;
     this.idleObserver.time = time;
     navigator.addIdleObserver(this.idleObserver);
+  },
+
+  // When the screen is turned on after a long pause the idle timer of
+  // the device is not reset to 0. As a side effect the handler fire as
+  // soon the screen is turned back on. In order to avoid such unwanted
+  // behavior a manual check is performed against the last time the screen
+  // has been turned on.
+  isIdleSinceLastScreenOn: function scm_isIdleSinceLastScreenOn() {
+    return Date.now() - this._lastScreenOnTimestamp >=
+      (this.idleObserver.time * 1000);
   },
 
   fireScreenChangeEvent: function scm_fireScreenChangeEvent() {

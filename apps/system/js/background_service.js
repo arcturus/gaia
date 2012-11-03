@@ -101,15 +101,14 @@ var BackgroundServiceManager = (function bsm() {
 
   /* Check if the app has the permission to open a background page */
   var hasBackgroundPermission = function bsm_checkPermssion(app) {
-    if (!app || !app.manifest.permissions)
+    var mozPerms = navigator.mozPermissionSettings;
+    if (!mozPerms)
       return false;
 
-    var keys = Object.keys(app.manifest.permissions);
-    var permissions = keys.map(function map_perm(key) {
-      return app.manifest.permissions[key];
-    });
+    var value = mozPerms.get('backgroundservice', app.manifestURL,
+                             app.origin, false);
 
-    return (permissions.indexOf('background') != -1);
+    return (value === 'allow');
   };
 
   /* The open function is responsible of containing the iframe */

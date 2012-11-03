@@ -18,7 +18,8 @@ var Settings = {
   },
 
   init: function settings_init() {
-    this.loadGaiaCommit();
+    // register web activity handler
+    navigator.mozSetMessageHandler('activity', this.webActivityHandler);
 
     var settings = this.mozSettings;
     if (!settings)
@@ -59,143 +60,94 @@ var Settings = {
     // preset all inputs that have a `name' attribute
     var lock = settings.createLock();
 
-    // preset all checkboxes
-    var rule = 'input[type="checkbox"]:not([data-ignore])';
-    var checkboxes = document.querySelectorAll(rule);
-    for (var i = 0; i < checkboxes.length; i++) {
-      (function(checkbox) {
-        var key = checkbox.name;
-        if (!key)
-          return;
-
-        var request = lock.get(key);
-        request.onsuccess = function() {
-          if (request.result[key] != undefined) {
-            checkbox.checked = !!request.result[key];
-          }
-        };
-      })(checkboxes[i]);
-    }
-
-    // preset all radio buttons
-    rule = 'input[type="radio"]:not([data-ignore])';
-    var radios = document.querySelectorAll(rule);
-    for (i = 0; i < radios.length; i++) {
-      (function(radio) {
-        var key = radio.name;
-        if (!key)
-          return;
-
-        var request = lock.get(key);
-        request.onsuccess = function() {
-          if (request.result[key] != undefined) {
-            radio.checked = (request.result[key] === radio.value);
-          }
-        };
-      })(radios[i]);
-    }
-
-    // preset all text inputs
-    rule = 'input[type="text"]:not([data-ignore])';
-    var texts = document.querySelectorAll(rule);
-    for (i = 0; i < texts.length; i++) {
-      (function(text) {
-        var key = text.name;
-        if (!key)
-          return;
-
-        var request = lock.get(key);
-        request.onsuccess = function() {
-          if (request.result[key] != undefined) {
-            text.value = request.result[key];
-          }
-        };
-      })(texts[i]);
-    }
-
-    // preset all range inputs
-    rule = 'input[type="range"]:not([data-ignore])';
-    var ranges = document.querySelectorAll(rule);
-    for (i = 0; i < ranges.length; i++) {
-      (function(range) {
-        var key = range.name;
-        if (!key)
-          return;
-
-        var request = lock.get(key);
-        request.onsuccess = function() {
-          if (request.result[key] != undefined) {
-            range.value = parseFloat(request.result[key]);
-            range.refresh(); // XXX to be removed when bug344618 lands
-          }
-        };
-      })(ranges[i]);
-    }
-
-    // handle web activity
-    var handler = navigator.mozSetMessageHandler;
-    if (handler && typeof(mozSetMessageHandler) == 'function') {
-      handler('activity', function settings_handleActivity(activityRequest) {
-        var name = activityRequest.source.name;
-        switch (name) {
-          case 'configure':
-            var section = activityRequest.source.data.section || 'root';
-
-            // Validate if the section exists
-            var actualSection = document.getElementById(section);
-            if (!actualSection || actualSection.tagName !== 'SECTION') {
-              var msg = 'Trying to open an unexistent section: ' + section;
-              console.warn(msg);
-              activityRequest.postError(msg);
-              return;
-            }
-
-            // Go to that section
-            setTimeout(function settings_goToSection() {
-              document.location.hash = section;
-            });
-            break;
+    var request = lock.get('*');
+    request.onsuccess = function(e) {
+      // preset all checkboxes
+      var rule = 'input[type="checkbox"]:not([data-ignore])';
+      var checkboxes = document.querySelectorAll(rule);
+      for (var i = 0; i < checkboxes.length; i++) {
+        var key = checkboxes[i].name;
+        if (key && request.result[key] != undefined) {
+          checkboxes[i].checked = !!request.result[key];
         }
-      });
-    }
+      }
 
-    // preset all select
-    var selects = document.querySelectorAll('select');
-    for (i = 0; i < selects.length; i++) {
-      (function(select) {
-        var key = select.name;
-        if (!key)
-          return;
+      // preset all radio buttons
+      rule = 'input[type="radio"]:not([data-ignore])';
+      var radios = document.querySelectorAll(rule);
+      for (i = 0; i < radios.length; i++) {
+        var key = radios[i].name;
+        if (key && request.result[key] != undefined) {
+          radios[i].checked = (request.result[key] === radios[i].value);
+        }
+      }
 
-        var request = lock.get(key);
-        request.onsuccess = function() {
+      // preset all text inputs
+      rule = 'input[type="text"]:not([data-ignore])';
+      var texts = document.querySelectorAll(rule);
+      for (i = 0; i < texts.length; i++) {
+        var key = texts[i].name;
+        if (key && request.result[key] != undefined) {
+          texts[i].value = request.result[key];
+        }
+      }
+
+      // preset all range inputs
+      rule = 'input[type="range"]:not([data-ignore])';
+      var ranges = document.querySelectorAll(rule);
+      for (i = 0; i < ranges.length; i++) {
+        var key = ranges[i].name;
+        if (key && request.result[key] != undefined) {
+          ranges[i].value = parseFloat(request.result[key]);
+          ranges[i].refresh(); // XXX to be removed when bug344618 lands
+        }
+      }
+
+      // preset all select
+      var selects = document.querySelectorAll('select');
+      for (i = 0; i < selects.length; i++) {
+        var key = selects[i].name;
+        if (key && request.result[key] != undefined) {
           var value = request.result[key];
-          if (value != undefined) {
-            var option = 'option[value="' + value + '"]';
-            var selectOption = select.querySelector(option);
-            if (selectOption) {
-              selectOption.selected = true;
-            }
+          var option = 'option[value="' + value + '"]';
+          var selectOption = selects[i].querySelector(option);
+          if (selectOption) {
+            selectOption.selected = true;
           }
-        };
-      })(selects[i]);
-    }
+        }
+      }
 
-    // preset all span with data-name fields
-    rule = 'span[data-name]:not([data-ignore])';
-    var spanFields = document.querySelectorAll(rule);
-    for (i = 0; i < spanFields.length; i++) {
-      (function(span) {
-        var key = span.dataset.name;
-        if (!key)
+      // preset all span with data-name fields
+      rule = 'span[data-name]:not([data-ignore])';
+      var spanFields = document.querySelectorAll(rule);
+      for (i = 0; i < spanFields.length; i++) {
+        var key = spanFields[i].dataset.name;
+        if (key && request.result[key] != undefined)
+          spanFields[i].textContent = request.result[key];
+      }
+    };
+
+  },
+  webActivityHandler: function settings_handleActivity(activityRequest) {
+    var name = activityRequest.source.name;
+    switch (name) {
+      case 'configure':
+        var section = activityRequest.source.data.section || 'root';
+
+        // Validate if the section exists
+        var sectionElement = document.getElementById(section);
+        if (!sectionElement || sectionElement.tagName !== 'SECTION') {
+          var msg = 'Trying to open an unexistent section: ' + section;
+          console.warn(msg);
+          activityRequest.postError(msg);
           return;
+        }
 
-        var request = lock.get(key);
-        request.onsuccess = function() {
-          if (request.result[key] != undefined)
-            span.textContent = request.result[key];
-        };
-      })(spanFields[i]);
+        // Go to that section
+        setTimeout(function settings_goToSection() {
+          document.location.hash = section;
+        });
+        break;
     }
   },
 
@@ -224,12 +176,17 @@ var Settings = {
         value = input.value; // text
         break;
     }
+
     var cset = {}; cset[key] = value;
     settings.createLock().set(cset);
   },
 
   loadGaiaCommit: function settings_loadGaiaCommit() {
-    var GAIA_COMMIT = 'gaia-commit.txt';
+    var GAIA_COMMIT = 'resources/gaia_commit.txt';
+    var dispDate = document.getElementById('gaia-commit-date');
+    var dispHash = document.getElementById('gaia-commit-hash');
+    if (dispHash.textContent)
+      return; // `gaia-commit.txt' has already been loaded
 
     function dateToUTC(d) {
       var arr = [];
@@ -247,14 +204,12 @@ var Settings = {
       if (req.readyState === 4) {
         if (req.status === 0 || req.status === 200) {
           var data = req.responseText.split('\n');
-          var dispDate = document.getElementById('gaia-commit-date');
-          var disp = document.getElementById('gaia-commit-hash');
           // XXX it would be great to pop a link to the github page
           // showing the commit but there doesn't seem to be any way
           // to tell the browser to do it.
           var d = new Date(parseInt(data[1] + '000', 10));
           dispDate.textContent = dateToUTC(d);
-          disp.textContent = data[0];
+          dispHash.textContent = data[0];
         } else {
           console.error('Failed to fetch gaia commit: ', req.statusText);
         }
@@ -320,6 +275,51 @@ var Settings = {
 
     reset(); // preset all fields before opening the dialog
     openDialog(dialogID, submit);
+  },
+
+  openUserGuide: function settings_openUserGuide() {
+    var settings = this.mozSettings;
+    if (!settings)
+      return;
+
+    var key = 'deviceinfo.os';
+    var req = settings.createLock().get(key);
+    req.onsuccess = function userGuide() {
+      var url = 'http://support.mozilla.org/1/firefox-os/' +
+        req.result[key] + '/gonk/' + document.documentElement.lang + '/';
+      openLink(url);
+    };
+  },
+
+  checkForUpdates: function settings_checkForUpdates() {
+    var settings = this.mozSettings;
+    if (!settings) {
+      return;
+    }
+
+    var _ = navigator.mozL10n.get;
+    var updateStatus = document.getElementById('update-status');
+
+    updateStatus.textContent = _('checking-for-update');
+    updateStatus.hidden = false;
+
+    settings.addObserver('gecko.updateStatus', function onUpdateStatus(evt) {
+      var value = evt.settingValue;
+      switch (value) {
+        case 'check-complete':
+          updateStatus.hidden = true;
+          break;
+        default:
+          updateStatus.textContent = _(value, null, value);
+          break;
+      }
+      settings.removeObserver('gecko.updateStatus', onUpdateStatus);
+    });
+
+    var lock = settings.createLock();
+    lock.set({
+      'gaia.system.checkForUpdates': true
+    });
   }
 };
 
@@ -346,17 +346,29 @@ window.addEventListener('load', function loadSettings(evt) {
   req.onsuccess = function brightness_onsuccess() {
     manualBrightness.hidden = req.result[autoBrightnessSetting];
   };
+});
 
-  // activate all external links
-  var links = document.querySelectorAll('a[href^="http"]');
-  for (var i = 0; i < links.length; i++) {
-    links[i].dataset.href = links[i].href;
-    links[i].href = '#';
-    links[i].onclick = function() {
-      openURL(this.dataset.href);
-      return false;
-    };
+// panel-specific code
+window.addEventListener('hashchange', function handleHashChange(event) {
+  switch (document.location.hash) {
+    case '#more-info':
+      Settings.loadGaiaCommit();
+      break;
+    case '#apnSettings':
+      Carrier.fillAPNList();
+      break;
+    // TODO: case 'timezone-continent':
   }
+
+  /**
+   * Most browsers now scroll content into view taking CSS transforms into
+   * account.  That's not what we want when moving between <section>s, because
+   * the being-moved-to section is offscreen when we navigate to its #hash.
+   * The transitions assume the viewport is always at document 0,0.  So add a
+   * hack here to make that assumption true again.
+   * https://bugzilla.mozilla.org/show_bug.cgi?id=803170
+   */
+  window.scrollTo(0, 0);
 });
 
 // back button = close dialog || back to the root page
@@ -372,7 +384,7 @@ window.addEventListener('keydown', function handleSpecialKeys(event) {
       dialog.classList.remove('active');
       document.body.classList.remove('dialog');
     } else {
-      document.location.hash = 'root';
+      document.location.hash = '#root';
     }
   } else if (event.keyCode === event.DOM_VK_RETURN) {
     event.target.blur();
@@ -381,20 +393,24 @@ window.addEventListener('keydown', function handleSpecialKeys(event) {
   }
 });
 
-// set the 'lang' and 'dir' attributes to <html> when the page is translated
+// startup
 window.addEventListener('localized', function showBody() {
+  // set the 'lang' and 'dir' attributes to <html> when the page is translated
   document.documentElement.lang = navigator.mozL10n.language.code;
   document.documentElement.dir = navigator.mozL10n.language.direction;
 
   // <body> children are hidden until the UI is translated
   if (document.body.classList.contains('hidden')) {
     // first run: show main page
+    if (!document.location.hash) {
+      document.location.hash = 'root';
+    }
     document.body.classList.remove('hidden');
   } else {
     // we were in #languages and selected another locale:
     // reset the hash to prevent weird focus bugs when switching LTR/RTL
     window.setTimeout(function() {
-      document.location.hash = 'languages';
+      document.location.hash = '#languages';
     });
   }
 
@@ -412,5 +428,38 @@ window.addEventListener('localized', function showBody() {
       navigator.mozL10n.language.code + '"]';
   document.getElementById('language-desc').textContent =
       document.querySelector(selector).textContent;
+
+  // handle specific links
+  document.getElementById('check-update-now').onclick =
+    Settings.checkForUpdates.bind(Settings);
+  document.querySelector('[data-l10n-id="user-guide"]').onclick =
+    Settings.openUserGuide.bind(Settings);
+
+  // activate all other links
+  var links = document.querySelectorAll('a[href^="http"], [data-href]');
+  for (var i = 0; i < links.length; i++) {
+    var link = links[i];
+    if (!link.dataset.href) {
+      link.dataset.href = link.href;
+      link.href = '#';
+    }
+
+    if (!link.dataset.href.startsWith('#')) { // external link
+      link.onclick = function() {
+        openLink(this.dataset.href);
+        return false;
+      };
+    } else if (!link.dataset.href.endsWith('Settings')) { // generic dialog box
+      link.onclick = function() {
+        openDialog(this.dataset.href.substr(1));
+        return false;
+      };
+    } else { // Settings-specific dialog box
+      link.onclick = function() {
+        Settings.openDialog(this.dataset.href.substr(1));
+        return false;
+      };
+    }
+  }
 });
 

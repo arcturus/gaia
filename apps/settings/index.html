@@ -18,24 +18,25 @@
     <link rel="stylesheet" type="text/css" href="style/settings.css"/>
     <link rel="stylesheet" type="text/css" href="style/simcard.css"/>
     <link rel="stylesheet" type="text/css" href="style/phone_lock.css"/>
+    <link rel="stylesheet" type="text/css" href="style/apps.css"/>
 
     <!-- Localization -->
     <link rel="resource" type="application/l10n" href="locales/locales.ini"/>
     <link rel="resource" type="application/l10n" href="shared/locales/date.ini"/>
+    <link rel="resource" type="application/l10n" href="shared/locales/permissions.ini"/>
+
+    <!-- Shared code -->
     <script type="application/javascript" src="shared/js/l10n.js"></script>
     <script type="application/javascript" src="shared/js/l10n_date.js"></script>
-
-    <!-- Async. Storage -->
-    <script type="application/javascript" src="/shared/js/async_storage.js"></script>
-
-    <!-- Load JSON files -->
-    <script type="application/javascript" defer src="js/utilities/config.js"></script>
+    <script type="application/javascript" src="shared/js/async_storage.js"></script>
+    <script type="application/javascript" src="shared/js/notification_helper.js"></script>
 
     <!-- Specific code -->
     <script type="application/javascript" defer src="js/utils.js"></script>
     <script type="application/javascript" defer src="js/settings.js"></script>
     <script type="application/javascript" defer src="js/carrier.js"></script>
     <script type="application/javascript" defer src="js/wifi.js"></script>
+    <script type="application/javascript" defer src="js/apps.js"></script>
     <script type="application/javascript" defer src="js/bluetooth.js"></script>
     <script type="application/javascript" defer src="js/simcard_lock.js"></script>
     <script type="application/javascript" defer src="js/simcard_dialog.js"></script>
@@ -140,14 +141,14 @@
           <input type="text" data-ignore name="ssid" />
         </li>
         <li>
-          <a data-l10n-id="security">security
+          <span data-l10n-id="security">security
             <select>
               <option data-l10n-id="securityNone">none</option>
               <option>WEP</option>
-              <option checked>WPA-PSK</option>
+              <option selected>WPA-PSK</option>
               <option>WPA-EAP</option>
             </select>
-          </a>
+          </span>
         </li>
         <li class="identity">
           <p data-l10n-id="identity">identity</p>
@@ -320,7 +321,7 @@
     </section>
 
     <!-- Connectivity :: Cellular & Data :: Network Operator -->
-    <section role="region" id="operator">
+    <section role="region" id="operatorSettings">
       <header>
         <a href="#data"><span class="icon icon-back">back</span></a>
         <h1 data-l10n-id="networkOperator"> Network Operator </h1>
@@ -377,7 +378,7 @@
         <!-- APNs matching the phone's MCC/MNC are inserted here dynamically -->
         <li id="apnSettings-custom">
           <label>
-            <input type="radio" name="APN.name" value="_custom_" selected />
+            <input type="radio" name="APN.name" value="_custom_" checked />
             <span></span>
           </label>
           <a data-l10n-id="custom">(custom settings)</a>
@@ -489,19 +490,20 @@
       <ul>
         <li>
           <label>
-            <button onclick="Settings.openDialog('operator');"
+            <button data-href="#operatorSettings"
               data-l10n-id="networkOperator"> Network Operator </button>
           </label>
         </li>
         <li>
           <label>
-            <button onclick="Settings.openDialog('apnSettings');"
+            <button data-href="#apnSettings"
               data-l10n-id="apnSettings">APN Settings</button>
           </label>
         </li>
-        <li>
+        <!-- MMS is not v1 feature, so hide MMS button until feature landed.-->
+        <li hidden>
           <label>
-            <button onclick="Settings.openDialog('mmsSettings');"
+            <button data-href="#mmsSettings"
               data-l10n-id="mmsSettings">MMS Settings</button>
           </label>
         </li>
@@ -600,13 +602,13 @@
           <input type="text" data-setting="tethering.wifi.security.password" />
         </li>
         <li>
-          <a data-l10n-id="wifi-security">Security
+          <span data-l10n-id="wifi-security">Security
             <select data-setting="tethering.wifi.security.type">
               <option>open</option>
               <option>WPA</option>
               <option selected>WPA2</option>
             </select>
-          </a>
+          </span>
         </li>
       </ul>
     </section>
@@ -649,7 +651,7 @@
         </li>
         <li>
           <label>
-            <button onclick="Settings.openDialog('hotspotSettings');"
+            <button data-href="#hotspotSettings"
               data-l10n-id="hotspotSettings">HotSpot Settings</button>
           </label>
         </li>
@@ -673,7 +675,7 @@
     </section>
 
     <!-- Personalization :: Sound :: Sound Selection -->
-    <section role="region" id="sound-selection" date-leaf>
+    <section role="region" id="sound-selection" data-leaf>
       <header>
         <button type="reset">
           <span data-l10n-id="back" class="icon icon-back">Back</span>
@@ -690,10 +692,10 @@
       <ul>
         <li>
           <label onmouseup="audioPreview(this)">
-            <input type="radio" name="tone-option" data-ignore value="classic.ogg" data-label="Default" checked />
+            <input type="radio" name="tone-option" data-ignore value="classic.ogg" data-label="Classic" checked />
             <span></span>
           </label>
-          <a data-l10n-id="classic">Default</a>
+          <a data-l10n-id="classic">Classic</a>
         </li>
         <li>
           <label onmouseup="audioPreview(this)">
@@ -717,15 +719,15 @@
       <ul>
         <li>
           <label onmouseup="audioPreview(this)">
-            <input type="radio" name="tone-option" data-ignore value="sms.wav" data-label="Sound of Message" />
+            <input type="radio" name="tone-option" data-ignore value="sms.wav" data-label="Beep Beep" />
             <span></span>
           </label>
-          <a data-l10n-id="lowBit">Sound of Message</a>
+          <a data-l10n-id="beep">Beep Beep</a>
         </li>
       </ul>
 
       <!-- Audio Preview -->
-      <audio style="display: none;" src="style/ringtones/classic.ogg" />
+      <audio style="display: none;" src="style/ringtones/classic.ogg"></audio>
     </section>
 
     <!-- Personalization :: Sound -->
@@ -762,21 +764,18 @@
           <label>
             <input type="range" name="audio.volume.master" min="0.1" value="0.5" max="1">
             <span class="range-icons volume"></span>
-          <label>
+          </label>
         </li>
         <li>
-          <label>
+          <span data-l10n-id="call">Call
             <button id="call-tone-selection" class="tone-select">Old School</button>
-            <span></span>
-          </label>
-          <a data-l10n-id="call">Call</a>
+          </span>
         </li>
         <li>
-          <label>
-            <button id="sms-tone-selection" class="tone-select">Beep Beep</button>
-            <span></span>
-          </label>
-          <a data-l10n-id="message">Message</a>
+          <span data-l10n-id="message">Message
+            <button id="sms-tone-selection" class="tone-select">
+              Beep Beep</button>
+          </span>
         </li>
       </ul>
 
@@ -812,7 +811,7 @@
       <ul>
         <li>
           <a data-l10n-id="wallpaper">Wallpaper</a>
-          <img id="wallpaper-preview"></img>
+          <img id="wallpaper-preview" alt="wallpaper preview"/>
         </li>
         <li>
           <p data-l10n-id="screen-timeout">Screen Timeout</p>
@@ -861,6 +860,7 @@
           </label>
           <a data-l10n-id="lockscreen-notifications">Show on Lock Screen</a>
         </li>
+      </ul>
     </section>
 
     <!-- Personalization :: Date & Time :: Time Zone (Continent) :: Time Zone (Zones) -->
@@ -871,7 +871,7 @@
       </header>
 
       <ul id="timezone-zones-list">
-        <!-- Create the zones dynamically -->
+        <!-- the timezone list is filled dynamically by js/date_time.js -->
       </ul>
     </section>
 
@@ -883,7 +883,7 @@
       </header>
 
       <ul id="timezone-continents">
-        <!-- Create the continets dynamically -->
+        <!-- the continent list is filled dynamically by js/date_time.js -->
       </ul>
     </section>
 
@@ -935,25 +935,17 @@
 
       <ul>
         <li>
-          <a data-l10n-id="language">Language
+          <span data-l10n-id="language">Language
             <select name="language.current">
               <option value="ar">العربية</option>
-              <option value="de">Deutsch</option>
-              <option value="el">Ελληνικά</option>
               <option value="en-US">English (US)</option>
-              <option value="es">Español</option>
               <option value="fr">Français</option>
-              <option value="nb-NO">Norsk</option>
-              <option value="it">Italiano</option>
-              <option value="pt-BR">Português (do Brasil)</option>
-              <option value="ru">Русский</option>
-              <option value="tr">Türkçe</option>
               <option value="zh-TW">正體中文</option>
             </select>
-          </a>
+          </span>
         </li>
         <li>
-          <a data-l10n-id="region">Region
+          <span data-l10n-id="region">Region
             <select name="region.current">
               <option value="BR">Brasil</option>
               <option value="CO">Columbia</option>
@@ -965,7 +957,7 @@
               <option value="US">United States</option>
               <option value="VZ">Venezuela</option>
             </select>
-          </a>
+          </span>
         </li>
       </ul>
 
@@ -1068,30 +1060,6 @@
             <span></span>
           </label>
           <a data-l10n-id="hebrew">Hebrew</a>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.zhuyin"/>
-            <span></span>
-          </label>
-          <small data-l10n-id="traditionalChinese-desc">Zhuyin</small>
-          <a data-l10n-id="traditionalChinese">Traditional Chinese</a>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.pinyin"/>
-            <span></span>
-          </label>
-          <small data-l10n-id="simplifiedChinese-desc">Pinyin</small>
-          <a data-l10n-id="simplifiedChinese">Simplified Chinese</a>
-        </li>
-        <li>
-          <label>
-            <input type="checkbox" name="keyboard.layouts.japanese"/>
-            <span></span>
-          </label>
-          <small data-l10n-id="jp-kanji-desc">Kanji</small>
-          <a data-l10n-id="jp-kanji">Japanese</a>
         </li>
         <li>
           <label>
@@ -1200,23 +1168,26 @@
           <div id="messageHeader">The PIN was incorrect.</div>
           <span id="messageBody">3 tries left.</span>
         </div>
-        <!-- sim pin input field -->
+
+        <!-- SIM PIN input field -->
         <div id="pinArea">
           <div data-l10n-id="simPin">SIM PIN</div>
           <div class="input-wrapper">
             <input type="number" name="simpin" size="8" maxlength="8" />
-            <input type="text" name="simpinVis" size="8" maxlength="8"/>
+            <input type="text" name="simpinVis" size="8" maxlength="8" />
           </div>
         </div>
-        <!-- sim puk input field -->
+
+        <!-- SIM PUK input field -->
         <div id="pukArea">
           <div data-l10n-id="pukCode">PUK Code</div>
           <div class="input-wrapper">
             <input type="number" name="simpuk" size="8" maxlength="8" />
-            <input type="text" name="simpukVis" size="8" maxlength="8"/>
+            <input type="text" name="simpukVis" size="8" maxlength="8" />
           </div>
         </div>
-        <!-- new sim pin input field -->
+
+        <!-- new SIM PIN input field -->
         <div id="newPinArea">
           <div data-l10n-id="newSimPinMsg">
             Create PIN (must contain 4 to 8 digits)
@@ -1226,7 +1197,8 @@
             <input type="text" name="newSimpinVis" size="8" maxlength="8" />
           </div>
         </div>
-        <!-- confirm new sim pin input field -->
+
+        <!-- confirm new SIM PIN input field -->
         <div id="confirmPinArea">
           <div>Confirm New PIN</div>
           <div class="input-wrapper">
@@ -1275,7 +1247,57 @@
       </ul>
     </section>
 
-    <!-- [TODO] Security :: App Permissions -->
+    <!-- Security :: Application Permissions :: Details -->
+    <section role="region" id="appPermissionsDetails" data-leaf>
+      <header>
+        <a href="#appPermissions"><span class="icon icon-back">back</span></a>
+        <h1> </h1>
+      </header>
+
+      <header>
+        <h2 data-l10n-id="developer">Developer</h2>
+      </header>
+      <ul>
+        <!-- this will be updated dynamically by js/apps.js -->
+        <li id="developer-infos">
+          <small><a target="_blank" href="http://github.com/mozilla-b2g/gaia/">http://github.com/mozilla-b2g/gaia/</a></small>
+          <a target="_blank" href="http://github.com/mozilla-b2g/gaia/"> The Gaia Team </a>
+        </li>
+      </ul>
+
+      <header id="permissionsListHeader">
+        <h2 data-l10n-id="permissions">Permissions</h2>
+      </header>
+      <ul>
+        <!-- this will be replaced dynamically by js/apps.js -->
+        <li>
+          <span>settings
+            <select>
+              <option>ask</option>
+              <option>deny</option>
+              <option>allow</option>
+            </select>
+          </span>
+        </li>
+      </ul>
+
+      <header>
+        <h2 data-l10n-id="uninstallApp">Uninstall App</h2>
+      </header>
+      <button id="uninstall-app" data-l10n-id="uninstallApp" class="danger">Uninstall App</button>
+    </section>
+
+    <!-- Security :: Application Permissions -->
+    <section role="region" id="appPermissions">
+      <header>
+        <a href="#root"><span class="icon icon-back">back</span></a>
+        <h1 data-l10n-id="appPermissions">
+          Application Permissions
+        </h1>
+      </header>
+      <ul>
+      </ul>
+    </section>
 
     <!-- Security :: Do Not Track -->
     <section role="region" id="doNotTrack" data-leaf>
@@ -1315,7 +1337,9 @@
     <!-- Device :: Information :: More Information :: Developer -->
     <section role="region" id="developer" data-leaf>
       <header>
-        <a href="#root"><span class="icon icon-back">back</span></a>
+        <button type="reset">
+          <span data-l10n-id="back" class="icon icon-back">Back</span>
+        </button>
         <h1 data-l10n-id="developer"> Developer </h1>
       </header>
 
@@ -1372,30 +1396,69 @@
           </label>
           <a data-l10n-id="oop-disabled">Disable Out-Of-Process</a>
         </li>
+        <li>
+          <label>
+            <input type="checkbox" name="devtools.debugger.remote-enabled"/>
+            <span></span>
+          </label>
+          <a data-l10n-id="remote-debugging">Remote Debugging</a>
+        </li>
+      </ul>
+
+      <header>
+        <h2 data-l10n-id="keyboardLayouts">Layouts</h2>
+      </header>
+      <ul>
+        <li>
+          <label>
+            <input type="checkbox" name="keyboard.layouts.zhuyin"/>
+            <span></span>
+          </label>
+          <small data-l10n-id="traditionalChinese-desc">Zhuyin</small>
+          <a data-l10n-id="traditionalChinese">Traditional Chinese</a>
+        </li>
+        <li>
+          <label>
+            <input type="checkbox" name="keyboard.layouts.pinyin"/>
+            <span></span>
+          </label>
+          <small data-l10n-id="simplifiedChinese-desc">Pinyin</small>
+          <a data-l10n-id="simplifiedChinese">Simplified Chinese</a>
+        </li>
+        <li>
+          <label>
+            <input type="checkbox" name="keyboard.layouts.japanese"/>
+            <span></span>
+          </label>
+          <small data-l10n-id="jp-kanji-desc">Kanji</small>
+          <a data-l10n-id="jp-kanji">Japanese</a>
+        </li>
        </ul>
     </section>
 
     <!-- Device :: Information :: More Information -->
     <section role="region" id="more-info">
       <header>
-        <button type="reset"><span data-l10n-id="back" class="icon icon-back">Back</button>
+        <button type="reset">
+          <span data-l10n-id="back" class="icon icon-back">Back</span>
+        </button>
         <h1 data-l10n-id="more-info"> More Information </h1>
       </header>
 
       <ul>
         <li>
-          <a data-l10n-id="model-name"> Model
-            <span data-name="deviceinfo.hardware"></span>
+          <a data-l10n-id="platform_version"> Platform Version
+            <span data-name="deviceinfo.platform_version"></span>
           </a>
         </li>
         <li>
-          <a data-l10n-id="os-version"> OS Version
-            <span data-name="deviceinfo.os"></span>
+          <a data-l10n-id="build-id"> Build Identifier
+            <span data-name="deviceinfo.platform_build_id"></span>
           </a>
         </li>
         <li>
-          <a data-l10n-id="macAddress"> MAC address
-            <span data-name="deviceinfo.mac"></span>
+          <a data-l10n-id="update-channel"> Update Channel
+            <span data-name="deviceinfo.update_channel"></span>
           </a>
         </li>
         <li>
@@ -1410,6 +1473,7 @@
       </header>
       <ul>
         <li>
+          <!-- these elements will be filled by dynamically js/settings.js -->
           <small id="gaia-commit-hash"></small>
           <a id="gaia-commit-date"></a>
         </li>
@@ -1421,7 +1485,7 @@
       <ul>
         <li>
           <label>
-            <button onclick="openDialog('developer');"
+            <button data-href="#developer"
               data-l10n-id="developer">Developer</button>
           </label>
         </li>
@@ -1431,7 +1495,9 @@
     <!-- Device :: Information :: About Your Rights -->
     <section role="region" id="about-your-rights" data-leaf>
       <header>
-        <button type="reset"><span data-l10n-id="back" class="icon icon-back">Back</button>
+        <button type="reset">
+          <span data-l10n-id="back" class="icon icon-back">Back</span>
+        </button>
         <h1 data-l10n-id="about-your-rights"> About Your Rights </h1>
       </header>
 
@@ -1466,7 +1532,9 @@
     <!-- Device :: Information :: About Your Privacy -->
     <section role="region" id="about-your-privacy" data-leaf>
       <header>
-        <button type="reset"><span data-l10n-id="back" class="icon icon-back">Back</button>
+        <button type="reset">
+          <span data-l10n-id="back" class="icon icon-back">Back</span>
+        </button>
         <h1 data-l10n-id="about-your-privacy"> About Your Privacy </h1>
       </header>
 
@@ -1483,7 +1551,9 @@
     <!-- Device :: Information :: Licensing -->
     <section role="region" id="licensing" data-leaf>
       <header>
-        <button type="reset"><span data-l10n-id="back" class="icon icon-back">Back</button>
+        <button type="reset">
+          <span data-l10n-id="back" class="icon icon-back">Back</span>
+        </button>
         <h1 data-l10n-id="licensing"> Licensing </h1>
       </header>
 
@@ -1540,7 +1610,8 @@
         </li>
         <li>
           <label>
-            <button data-l10n-id="more-info" onclick="openDialog('more-info')"> More Information </button>
+            <button data-href="#more-info"
+              data-l10n-id="more-info"> More Information </button>
           </label>
         </li>
       </ul>
@@ -1560,9 +1631,11 @@
         </li>
         <li>
           <label>
-            <button id="check-update-now" data-l10n-id="check-update-now">Check Now</button>
+            <button id="check-update-now"
+              data-l10n-id="check-update-now"> Check Now </button>
           </label>
         </li>
+        <li id="update-status" class="description" hidden></li>
       </ul>
 
       <header>
@@ -1576,29 +1649,20 @@
         </li>
         <li>
           <label>
-            <button data-l10n-id="about-your-rights" onclick="openDialog('about-your-rights')"> About Your Rights </button>
+            <button data-href="#about-your-rights"
+              data-l10n-id="about-your-rights"> About Your Rights </button>
           </label>
         </li>
         <li>
           <label>
-            <button data-l10n-id="about-your-privacy" onclick="openDialog('about-your-privacy')"> About Your Privacy </button>
+            <button data-href="#about-your-privacy"
+              data-l10n-id="about-your-privacy"> About Your Privacy </button>
           </label>
         </li>
         <li>
           <label>
-            <button data-l10n-id="licensing" onclick="openDialog('licensing')"> Licensing </button>
-          </label>
-        </li>
-        <li>
-          <label for="share-performance-data" class="description">
-            <div>
-              <input type="checkbox" id="share-performance-data" name="debug.peformancedata.shared" />
-              <span data-l10n-id="share-performance-data">
-                I want to help make Firefox OS faster and easier to use by
-                sharing information about my phone’s performance.
-              </span>
-              <a href="https://www.mozilla.org/" data-l10n-id="learn-more"> Learn More </a>
-            </div>
+            <button data-href="#licensing"
+              data-l10n-id="licensing"> Licensing </button>
           </label>
         </li>
       </ul>
@@ -1659,7 +1723,7 @@
       </header>
       <ul>
         <li>
-          <meter id="apps-space-bar" min="0" max="100"></meter>
+          <meter id="apps-space-bar" min="0" value="0" max="100"></meter>
         </li>
 
         <li>
@@ -1690,7 +1754,6 @@
         <a href="#root"><span class="icon icon-back">back</span></a>
         <h1 data-l10n-id="mediaStorage"> Media Storage </h1>
       </header>
-
       <ul>
         <li>
           <a id="music-space" data-l10n-id="music-space"> Music
@@ -1717,7 +1780,6 @@
       <header>
         <h2 data-l10n-id="advanced">Advanced</h2>
       </header>
-
       <ul>
         <li>
           <label>
@@ -1728,7 +1790,6 @@
           <a data-l10n-id="umsEnabled">USB Mass Storage Enabled</a>
         </li>
       </ul>
-
     </section>
 
     <!-- Device :: Accessibility -->
@@ -1756,6 +1817,72 @@
       </ul>
     </section>
 
+    <!-- Device :: Improve Firefox OS -->
+    <section role="region" id="improve-firefox-os" data-leaf>
+      <header>
+        <a href="#root"><span class="icon icon-back">back</span></a>
+        <h1 data-l10n-id="improveFirefoxOS">Improve Firefox OS</h1>
+      </header>
+
+      <header>
+        <h2 data-l10n-id="performanceData">Performance Data</h2>
+      </header>
+      <ul>
+        <li>
+          <label for="" class="description">
+            <span data-l10n-id="performanceDataInfo">
+              Make Firefox OS faster and easier to use by sharing
+              information over Wi-Fi about your phone’s performance.
+            </span>
+            <a href="https://www.mozilla.org/" data-l10n-id="learn-more" class="link-text">Learn More</a>
+          </label>
+        </li>
+        <li>
+          <label>
+            <input type="checkbox" name="debug.peformancedata.shared" />
+            <span></span>
+          </label>
+          <a data-l10n-id="sharePerformanceData">Submit performance data</a>
+        </li>
+      </ul>
+
+      <header>
+        <h2 data-l10n-id="crashReports">Crash Reports</h2>
+      </header>
+      <ul>
+        <li>
+          <label for="" class="description">
+            <span data-l10n-id="crashReportInfo">
+              Sending Mozilla a report when a crash occurs helps us fix the problem
+              for everyone. Reports are sent over Wi-Fi only.
+            </span>
+            <a href="https://www.mozilla.org/" data-l10n-id="learn-more" class="link-text">Learn More</a>
+          </label>
+        </li>
+        <li>
+          <label>
+            <input type="radio" name="app.reportCrashes" value="always"/>
+            <span></span>
+          </label>
+          <a data-l10n-id="alwaysSendReport">Always send a report</a>
+        </li>
+        <li>
+          <label>
+            <input type="radio" name="app.reportCrashes" value="never" />
+            <span></span>
+          </label>
+          <a data-l10n-id="neverSendReport">Never send a report</a>
+        </li>
+        <li>
+          <label>
+            <input type="radio" name="app.reportCrashes" value="ask" checked />
+            <span></span>
+          </label>
+          <a data-l10n-id="askToSendReport">Ask me when a crash occurs</a>
+        </li>
+      </ul>
+    </section>
+
     <!-- Device :: Help -->
     <section role="region" id="help" data-leaf>
       <header>
@@ -1765,18 +1892,18 @@
 
       <ul>
         <li>
-          <a href="#" onclick="openURL('http://www.telefonica.com'); return false;" data-l10n-id="online-support"> Online Support:
+          <a href="#" data-href="http://www.telefonica.com/" data-l10n-id="online-support"> Online Support:
             <span class="link-text" data-l10n-id="online-support-link">www.telefonica.com</span>
           </a>
         </li>
         <li>
-          <a href="#" onclick="dialNumber('+16509030800'); return false;" data-l10n-id="call-support"> Call Support:
+          <a href="#" data-href="tel:+16509030800" data-l10n-id="call-support"> Call Support:
             <span class="tel-text" data-l10n-id="call-support-number">+1 650-903-0800</span>
           </a>
         </li>
         <li>
           <label>
-            <button data-l10n-id="user-guide" onclick="openURL('http://mozilla.org')"> User Guide </button>
+            <button data-l10n-id="user-guide"> User Guide </button>
           </label>
         </li>
       </ul>
@@ -1785,7 +1912,9 @@
     <!-- SIM Toolkit -->
     <section role="region" id="icc">
       <header>
-        <button id="icc-stk-app-back" class="hidden"><span data-l10n-id="back" class="icon icon-back">Back</button>
+        <button id="icc-stk-app-back" class="hidden">
+          <span data-l10n-id="back" class="icon icon-back">Back</span>
+        </button>
         <a href="#root" id="icc-stk-exit"><span data-l10n-id="back" class="icon icon-back">Back</span></a>
         <h1 id="icc-stk-header"> SIM Toolkit </h1>
       </header>
@@ -1797,7 +1926,7 @@
         <!-- filled by icc.js -->
       </ul>
 
-      <form role="dialog" id="icc-stk-alert" class="hidden">
+      <form role="dialog" data-type="confirm" id="icc-stk-alert" class="hidden">
         <section>
           <h1 data-l10n-id="message">Message</h1>
           <p id="icc-stk-alert-msg">
@@ -1907,7 +2036,7 @@
           <small id="simCardLock-desc"></small>
           <a href="#sim" data-l10n-id="simSecurity">SIM Security</a>
         </li>
-        <li hidden>
+        <li>
           <a href="#appPermissions" data-l10n-id="appPermissions">App Permissions</a>
         </li>
         <li>
@@ -1938,6 +2067,9 @@
         </li>
         <li hidden>
           <a href="#accessibility" data-l10n-id="accessibility">Accessibility</a>
+        </li>
+        <li>
+          <a href="#improve-firefox-os" data-l10n-id="improveFirefoxOS">Improve Firefox OS</a>
         </li>
         <li>
           <a href="#help" data-l10n-id="helpAndFeedback">Help &amp; Feedback</a>

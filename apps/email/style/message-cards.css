@@ -24,8 +24,6 @@
 }
 
 .msg-messages-sync-container {
-  min-height: 4.8rem;
-  height: 4.8rem;
 }
 
 .msg-search-tease-bar {
@@ -52,7 +50,7 @@
   position: relative;
   height: 8rem;
   overflow: hidden;
-  border-bottom: 1px solid gray;
+  border-bottom: 1px solid lightgray;
   vertical-align: 0%;
 }
 .msg-header-item:active {
@@ -77,7 +75,7 @@
   top: 0px;
   left: 3.8rem;
   /* 100% - (unread-section) - (icons-section) - (avatar-section) */
-  width: -moz-calc(100% - 1.9rem - 2rem - 2.8rem);
+  width: -moz-calc(100% - 4rem - 2rem - 2.8rem);
   height: 100%;
   font-size: 1.6rem;
   line-height: 2.0rem;
@@ -223,12 +221,35 @@
   list-style-type: none;
   height: 4rem;
 }
+.msg-attachment-item[state="downloadable"]  > .msg-attachment-download {
+  display: inline-block;
+}
+.msg-attachment-item[state="downloading"]  > .msg-attachment-downloading {
+  display: inline-block;
+}
+.msg-attachment-item[state="downloaded"]  > .msg-attachment-view {
+  display: inline-block;
+}
 .msg-attachment-icon {
 }
 .msg-attachment-filename {
 }
 .msg-attachment-filesize {
   color: gray;
+}
+.msg-attachment-download {
+  display: none;
+  width: 3.5rem;
+  margin-left: 2rem;
+}
+.msg-attachment-downloading {
+  display: none;
+  margin-left: 2rem;
+}
+.msg-attachment-view {
+  display: none;
+  width: 3.5rem;
+  margin-left: 2rem;
 }
 
 .msg-body-content {
@@ -306,7 +327,7 @@
 }
 
 .msg-edit-btn {
-  background: url("images/icons/edit.png") no-repeat scroll center transparent;
+  background: url("images/icons/edit-mode.png") no-repeat scroll center transparent;
   position: absolute;
   left: calc((100% - 6rem)/2);
 }
@@ -358,12 +379,20 @@
 .msg-messages-sync-container > p[role="status"],
 .msg-list-empty {
   width: 80%;
-  margin : 0 10%;
+  padding: 2rem 10%;
   text-align: center;
 }
 .msg-list-empty {
   position: absolute;
   top: 40%;
+}
+.msg-messages-sync-more {
+  margin: 3rem 0;
+  border-top: 1px solid lightgray;
+  border-bottom: 1px solid lightgray;
+}
+.msg-messages-sync-more > span {
+  margin: 0 !important;
 }
 /* FILTERS BUILDING BLOCKS COPIED AND PASTED */
 
