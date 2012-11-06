@@ -54,6 +54,9 @@ var WindowManager = (function() {
   var homescreen = null;
   var homescreenURL = '';
   var homescreenManifestURL = '';
+  var ftu = null;
+  var ftuManifestURL = '';
+  var ftuURL = '';
   // keep the reference of inline activity frame here
   var inlineActivityFrame = null;
 
@@ -360,6 +363,11 @@ var WindowManager = (function() {
 
   // Executes when app closing transition finishes.
   function windowClosed(frame) {
+    // If the FTU is closing, make sure we save this state
+    if (frame.src == ftuURL) {
+      return;  
+    }
+
     frame.classList.remove('active');
     windows.classList.remove('active');
 
@@ -733,6 +741,13 @@ var WindowManager = (function() {
         callback(app);
       }
     }
+  }
+
+  function retrieveFTU() {
+    ftuManifestURL = 'app://communications.gaiamobile.org/manifest.webapp';
+    ftu = Applications.getByManifestURL(ftuManifestURL);
+    ftuURL = ftu.origin + ftu.manifest.entry_points['ftu'].launch_path;
+    ftu.launch('ftu');
   }
 
   // Hide current app
@@ -1350,8 +1365,17 @@ var WindowManager = (function() {
       document.mozCancelFullScreen();
     } else if (inlineActivityFrame) {
       stopInlineActivity();
+<<<<<<< HEAD
     } else if (displayedApp !== homescreen || openFrame) {
       setDisplayedApp(homescreen);
+=======
+    } else if (displayedApp !== homescreen) {
+      if (displayedApp != ftuURL) {
+        setDisplayedApp(homescreen);
+      } else {
+        e.preventDefault();
+      }
+>>>>>>> Launching FTU and preventing hidding it till we finish the FTU
     } else {
       ensureHomescreen(true);
     }
@@ -1409,6 +1433,7 @@ var WindowManager = (function() {
     },
     hideCurrentApp: hideCurrentApp,
     restoreCurrentApp: restoreCurrentApp,
-    retrieveHomescreen: retrieveHomescreen
+    retrieveHomescreen: retrieveHomescreen,
+    retrieveFTU: retrieveFTU
   };
 }());

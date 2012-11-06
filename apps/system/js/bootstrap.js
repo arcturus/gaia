@@ -5,10 +5,7 @@
 
 window.addEventListener('load', function startup() {
   function firstAppManager(homescreenApp) {
-    // TODO Include algorith for handling which app is the first running app
-    // By now will be homescreen until merging #5883
-    var app = Applications.getByManifestURL('app://communications.gaiamobile.org/manifest.webapp');
-    app.launch('ftu');
+    WindowManager.retrieveFTU();
     //homescreenApp.launch();
   }
   if (Applications.ready) {
