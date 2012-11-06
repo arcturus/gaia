@@ -57,3 +57,4 @@ window.addEventListener('localized', function showBody() {
     UIManager.mainTitle.innerHTML = _('language');
   }
 });
+
