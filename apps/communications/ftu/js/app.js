@@ -57,7 +57,3 @@ window.addEventListener('localized', function showBody() {
     UIManager.mainTitle.innerHTML = _('language');
   }
 });
-
-window.navigator.mozSetMessageHandler('activity', function actHandle(activity) {
-  AppManager.currentActivity = activity;
-});
