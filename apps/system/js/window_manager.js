@@ -743,6 +743,7 @@ var WindowManager = (function() {
     }
   }
 
+<<<<<<< HEAD
   // Check if the FTU was executed or not, if not, get a
   // reference to the app and launch it.
   function retrieveFTU() {
@@ -761,6 +762,13 @@ var WindowManager = (function() {
         ftu.launch('ftu');
       };
     });
+=======
+  function retrieveFTU() {
+    ftuManifestURL = 'app://communications.gaiamobile.org/manifest.webapp';
+    ftu = Applications.getByManifestURL(ftuManifestURL);
+    ftuURL = ftu.origin + ftu.manifest.entry_points['ftu'].launch_path;
+    ftu.launch('ftu');
+>>>>>>> Launching FTU and preventing hidding it till we finish the FTU
   }
 
   // Hide current app
@@ -1378,7 +1386,11 @@ var WindowManager = (function() {
       document.mozCancelFullScreen();
     } else if (inlineActivityFrame) {
       stopInlineActivity();
+<<<<<<< HEAD
     } else if (displayedApp !== homescreen || openFrame) {
+=======
+    } else if (displayedApp !== homescreen) {
+>>>>>>> Launching FTU and preventing hidding it till we finish the FTU
       if (displayedApp != ftuURL) {
         setDisplayedApp(homescreen);
       } else {
