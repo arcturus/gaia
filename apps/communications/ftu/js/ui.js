@@ -108,16 +108,7 @@ var UIManager = {
         WifiManager.scan(UIManager.renderNetworks);
         break;
       case 'sim_import':
-        var feedbackMessage = document.getElementById('sim_import_feedback');
-        feedbackMessage.innerHTML = 'Importing...';
-        importSIMContacts(
-          function() {
-            feedbackMessage.innerHTML = 'Reading SIM card...';
-          }, function(n) {
-            feedbackMessage.innerHTML = n + ' contacts imported';
-          }, function() {
-            feedbackMessage.innerHTML = 'Error reading your SIM card.';
-        });
+        this.importFromSim();
         break;
       case 'done':
         this.unlockSIM();
@@ -140,6 +131,18 @@ var UIManager = {
         }
         break;
     }
+  },
+  importFromSim: function ui_ifs() {
+    var feedbackMessage = document.getElementById('sim_import_feedback');
+    feedbackMessage.innerHTML = _('simContacts-importing');
+    importSIMContacts(
+      function() {
+        feedbackMessage.innerHTML = _('simContacts-reading');
+      }, function(n) {
+        feedbackMessage.innerHTML = _('simContacts-imported', {n: n});
+      }, function() {
+        feedbackMessage.innerHTML = _('simContacts-error');
+    });
   },
   joinNetwork: function ui_jn() {
     var ssid = document.getElementById('wifi_ssid').value;
