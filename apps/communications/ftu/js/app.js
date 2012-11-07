@@ -11,6 +11,7 @@ var AppManager = {
     UIManager.init();
     Navigation.init();
 
+    var splashTimeout = 2000;
     // Retrieve mobile connection if available
     var conn = window.navigator.mozMobileConnection;
     if (!conn) {
@@ -20,7 +21,7 @@ var AppManager = {
         UIManager.splashScreen.classList.remove('show');
         UIManager.activationScreen.classList.add('show');
         window.location.hash = '#languages';
-      }, 1000);
+      }, splashTimeout);
       return;
     }
 
@@ -44,7 +45,7 @@ var AppManager = {
       }
       // Remove the splash
       UIManager.splashScreen.classList.remove('show');
-    }, 3000);
+    }, splashTimeout);
   }
 };
 
