@@ -6,7 +6,6 @@
 window.addEventListener('load', function startup() {
   function firstAppManager(homescreenApp) {
     WindowManager.retrieveFTU();
-    //homescreenApp.launch();
   }
   if (Applications.ready) {
     WindowManager.retrieveHomescreen(firstAppManager);
