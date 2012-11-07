@@ -89,12 +89,12 @@ var UIManager = {
       toLocaleFormat('%H:%M');
     this.dateConfigurationLabel.innerHTML = currentDate.
       toLocaleFormat('%Y-%m-%d');
-    // AÑado los eventos al DOM
+    // Add events to DOM
     this.refreshButton.addEventListener('click', this);
     this.simImportButton.addEventListener('click', this);
     this.doneButton.addEventListener('click', this);
     this.joinButton.addEventListener('click', this);
-    this.networks.addEventListener('click', this.chooseNetwork.bind(this));
+    this.networks.addEventListener('click', this);
     this.timezoneConfiguration.addEventListener('change', this);
     this.timeConfiguration.addEventListener('input', this);
     this.dateConfiguration.addEventListener('input', this);
@@ -133,6 +133,11 @@ var UIManager = {
         break;
       case 'timezone-configuration':
         this.setTimeZone();
+        break;
+      default:
+        if(event.target.parentNode.parentNode.id == 'networks') {
+          this.chooseNetwork(event);
+        }
         break;
     }
   },

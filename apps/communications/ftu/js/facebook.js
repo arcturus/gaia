@@ -31,35 +31,14 @@ var FacebookIntegration = {
   handleEvent: function fb_he(event) {
     switch (event.type) {
       case 'click':
-<<<<<<< HEAD
         FbLauncher.start();
         break;
       case 'fb_imported':
-=======
-        this.fbExtensions.classList.remove('hidden');
-        Contacts.extFb.importFBFromUrl('/contacts/fb_import.html');
-        break;
-      case 'fb_imported':
-        this.closeImport();
->>>>>>> Initial FTU implementation
         this.updateContactsNumber();
         break;
     }
   },
 
-<<<<<<< HEAD
-=======
-  closeImport: function closeImport() {
-    var self = this;
-    this.fbExtensions.addEventListener('transitionend', function tclose() {
-      self.fbExtensions.removeEventListener('transitionend', tclose);
-      self.fbExtensions.src = null;
-    });
-
-    this.fbExtensions.className = 'closingImport';
-  },
-
->>>>>>> Initial FTU implementation
   updateContactsNumber: function fb_ucn() {
     this.fbImportFeedback.textContent = '... checking';
 
