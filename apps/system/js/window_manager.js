@@ -764,11 +764,32 @@ var WindowManager = (function() {
     });
 =======
   function retrieveFTU() {
+<<<<<<< HEAD
     ftuManifestURL = 'app://communications.gaiamobile.org/manifest.webapp';
     ftu = Applications.getByManifestURL(ftuManifestURL);
     ftuURL = ftu.origin + ftu.manifest.entry_points['ftu'].launch_path;
     ftu.launch('ftu');
 >>>>>>> Launching FTU and preventing hidding it till we finish the FTU
+=======
+    var lock = navigator.mozSettings.createLock();
+    var setting = lock.get('ftu.enabled');
+    setting.onsuccess = function() {
+      var launchFTU = this.result['ftu.enabled'];
+      
+      if (!launchFTU) {
+        ensureHomescreen();
+        return;
+      }
+
+      var req = lock.get('ftu.manifestURL');
+      req.onsuccess = function() {
+        ftuManifestURL = this.result['ftu.manifestURL'];
+        ftu = Applications.getByManifestURL(ftuManifestURL);
+        ftuURL = ftu.origin + ftu.manifest.entry_points['ftu'].launch_path;
+        ftu.launch('ftu');
+      };
+    };
+>>>>>>> Adding as parameter the execution of the FTU
   }
 
   // Hide current app
