@@ -53,36 +53,36 @@ var FbLauncher = (function(document) {
       switch (data.type) {
         case 'ready':
           open();
-        break;
+          break;
 
         case 'abort':
           unload();
-        break;
+          break;
 
         case 'window_close':
           close();
-        break;
+          break;
 
         case 'authenticating':
           extensionFrame.dataset.animFrom = 'bottom';
-        break;
+          break;
 
-         case 'authenticated':
+        case 'authenticated':
           extensionFrame.src = currentURI;
           access_token = data.data;
-        break;
+          break;
 
         case 'messaging_ready':
           extensionFrame.contentWindow.postMessage({
             type: 'token',
             data: access_token
           }, fb.CONTACTS_APP_ORIGIN);
-        break;
+          break;
       }
     }
 
     return {
       start: load
-    }
+    };
 
   })(document);
