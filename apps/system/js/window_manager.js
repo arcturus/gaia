@@ -1378,17 +1378,12 @@ var WindowManager = (function() {
       document.mozCancelFullScreen();
     } else if (inlineActivityFrame) {
       stopInlineActivity();
-<<<<<<< HEAD
     } else if (displayedApp !== homescreen || openFrame) {
-      setDisplayedApp(homescreen);
-=======
-    } else if (displayedApp !== homescreen) {
       if (displayedApp != ftuURL) {
         setDisplayedApp(homescreen);
       } else {
         e.preventDefault();
       }
->>>>>>> Launching FTU and preventing hidding it till we finish the FTU
     } else {
       ensureHomescreen(true);
     }
