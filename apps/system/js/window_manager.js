@@ -365,6 +365,10 @@ var WindowManager = (function() {
   function windowClosed(frame) {
     // If the FTU is closing, make sure we save this state
     if (frame.src == ftuURL) {
+      var settings = navigator.mozSettings;
+      var transaction = settings.createLock();
+      transaction.set({'ftu.enabled': false});
+
       return;  
     }
 
@@ -744,10 +748,24 @@ var WindowManager = (function() {
   }
 
   function retrieveFTU() {
-    ftuManifestURL = 'app://communications.gaiamobile.org/manifest.webapp';
-    ftu = Applications.getByManifestURL(ftuManifestURL);
-    ftuURL = ftu.origin + ftu.manifest.entry_points['ftu'].launch_path;
-    ftu.launch('ftu');
+    var lock = navigator.mozSettings.createLock();
+    var setting = lock.get('ftu.enabled');
+    setting.onsuccess = function() {
+      var launchFTU = this.result['ftu.enabled'];
+      
+      if (!launchFTU) {
+        ensureHomescreen();
+        return;
+      }
+
+      var req = lock.get('ftu.manifestURL');
+      req.onsuccess = function() {
+        ftuManifestURL = this.result['ftu.manifestURL'];
+        ftu = Applications.getByManifestURL(ftuManifestURL);
+        ftuURL = ftu.origin + ftu.manifest.entry_points['ftu'].launch_path;
+        ftu.launch('ftu');
+      };
+    };
   }
 
   // Hide current app
