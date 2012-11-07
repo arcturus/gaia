@@ -2,7 +2,7 @@
 
 var WifiManager = {
 
-  init: function init() {
+  init: function  wn_init() {
 
     if ('mozWifiManager' in window.navigator) {
       this.api = window.navigator.mozWifiManager;
@@ -10,7 +10,7 @@ var WifiManager = {
       this.gCurrentNetwork = this.api.connection.network;
     }
   },
-  scan: function scan(callback) {
+  scan: function wn_scan(callback) {
     if ('mozWifiManager' in window.navigator) {
       var req = WifiManager.api.getNetworks();
       var self = this;
@@ -56,14 +56,14 @@ var WifiManager = {
       callback(fakeNetworks);
     }
   },
-  enable: function enable(firstTime) {
+  enable: function wn_enable(firstTime) {
     var settings = window.navigator.mozSettings;
     settings.createLock().set({'wifi.enabled': true});
   },
   getNetwork: function wm_gn(ssid) {
     return this.networks[ssid];
   },
-  connect: function connect(ssid, password, user, callback) {
+  connect: function wn_connect(ssid, password, user, callback) {
     var network = this.networks[ssid];
     this.ssid = ssid;
     var key = this.getSecurityType(network);
@@ -85,7 +85,7 @@ var WifiManager = {
     this.gCurrentNetwork = network;
     this.api.associate(network);
   },
-  changeStatus: function cs(callback) {
+  changeStatus: function wn_cs(callback) {
     /**
        * mozWifiManager status
        * see dom/wifi/nsIWifi.idl -- the 4 possible statuses are:
@@ -105,16 +105,16 @@ var WifiManager = {
     var self = this;
     WifiManager.api.onstatuschange = function(event) {
       UIManager.updateNetworkStatus(self.ssid, event.status);
-        if (event.status == 'connected') {
-          self.isConnected = true;
-        } else {
-          self.isConnected = false;
+      if (event.status == 'connected') {
+        self.isConnected = true;
+      } else {
+        self.isConnected = false;
       }
     };
 
   },
 
-  getSecurityType: function gst(network) {
+  getSecurityType: function wn_gst(network) {
     var key = network.capabilities[0];
         if (/WEP$/.test(key))
           return 'WEP';
@@ -124,10 +124,10 @@ var WifiManager = {
           return 'WPA-EAP';
         return false;
   },
-  isUserMandatory: function ium(ssid) {
+  isUserMandatory: function wn_ium(ssid) {
     return (this.getSecurityType(this.networks[ssid]).indexOf('EAP') != -1);
   },
-  isPasswordMandatory: function ipm(ssid) {
+  isPasswordMandatory: function wn_ipm(ssid) {
     if (!this.getSecurityType(this.networks[ssid])) {
       return false;
     }
