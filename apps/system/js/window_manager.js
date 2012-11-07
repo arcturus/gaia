@@ -365,11 +365,7 @@ var WindowManager = (function() {
   function windowClosed(frame) {
     // If the FTU is closing, make sure we save this state
     if (frame.src == ftuURL) {
-      var settings = navigator.mozSettings;
-      var transaction = settings.createLock();
-      transaction.set({'ftu.enabled': false});
-
-      return;  
+      window.asyncStorage.setItem('ftu.enabled', false);
     }
 
     frame.classList.remove('active');
@@ -747,17 +743,16 @@ var WindowManager = (function() {
     }
   }
 
+  // Check if the FTU was executed or not, if not, get a
+  // reference to the app and launch it.
   function retrieveFTU() {
-    var lock = navigator.mozSettings.createLock();
-    var setting = lock.get('ftu.enabled');
-    setting.onsuccess = function() {
-      var launchFTU = this.result['ftu.enabled'];
-      
-      if (!launchFTU) {
+    window.asyncStorage.getItem('ftu.enabled', function getItem(launchFTU) {
+      if (launchFTU === false) {
         ensureHomescreen();
         return;
       }
 
+      var lock = navigator.mozSettings.createLock();
       var req = lock.get('ftu.manifestURL');
       req.onsuccess = function() {
         ftuManifestURL = this.result['ftu.manifestURL'];
@@ -765,7 +760,7 @@ var WindowManager = (function() {
         ftuURL = ftu.origin + ftu.manifest.entry_points['ftu'].launch_path;
         ftu.launch('ftu');
       };
-    };
+    });
   }
 
   // Hide current app
