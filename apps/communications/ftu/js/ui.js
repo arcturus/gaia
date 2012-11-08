@@ -198,7 +198,10 @@ var UIManager = {
     var currentTime = new Date();
     // Format: 2012-09-01
     var pTime = document.getElementById('time-configuration').value;
-    pTime = '0' + pTime;
+    console.log(pTime);
+    if (pTime.indexOf(':') == 1) {  // Format: 8:05 --> 08:05
+      pTime = '0' + pTime;
+    }
     var pDate = currentTime.toLocaleFormat('%Y-%m-%d');
     var timeToSet = new Date(pDate + 'T' + pTime);
     // Set date through API
