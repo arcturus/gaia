@@ -89,12 +89,12 @@ var UIManager = {
       toLocaleFormat('%H:%M');
     this.dateConfigurationLabel.innerHTML = currentDate.
       toLocaleFormat('%Y-%m-%d');
-    // AÑado los eventos al DOM
+    // Add events to DOM
     this.refreshButton.addEventListener('click', this);
     this.simImportButton.addEventListener('click', this);
     this.doneButton.addEventListener('click', this);
     this.joinButton.addEventListener('click', this);
-    this.networks.addEventListener('click', this.chooseNetwork.bind(this));
+    this.networks.addEventListener('click', this);
     this.timezoneConfiguration.addEventListener('change', this);
     this.timeConfiguration.addEventListener('input', this);
     this.dateConfiguration.addEventListener('input', this);
@@ -108,16 +108,7 @@ var UIManager = {
         WifiManager.scan(UIManager.renderNetworks);
         break;
       case 'sim_import':
-        var feedbackMessage = document.getElementById('sim_import_feedback');
-        feedbackMessage.innerHTML = 'Importing...';
-        importSIMContacts(
-          function() {
-            feedbackMessage.innerHTML = 'Reading SIM card...';
-          }, function(n) {
-            feedbackMessage.innerHTML = n + ' contacts imported';
-          }, function() {
-            feedbackMessage.innerHTML = 'Error reading your SIM card.';
-        });
+        this.importFromSim();
         break;
       case 'done':
         this.unlockSIM();
@@ -134,7 +125,24 @@ var UIManager = {
       case 'timezone-configuration':
         this.setTimeZone();
         break;
+      default:
+        if(event.target.parentNode.parentNode.id == 'networks') {
+          this.chooseNetwork(event);
+        }
+        break;
     }
+  },
+  importFromSim: function ui_ifs() {
+    var feedbackMessage = document.getElementById('sim_import_feedback');
+    feedbackMessage.innerHTML = _('simContacts-importing');
+    importSIMContacts(
+      function() {
+        feedbackMessage.innerHTML = _('simContacts-reading');
+      }, function(n) {
+        feedbackMessage.innerHTML = _('simContacts-imported', {n: n});
+      }, function() {
+        feedbackMessage.innerHTML = _('simContacts-error');
+    });
   },
   joinNetwork: function ui_jn() {
     var ssid = document.getElementById('wifi_ssid').value;
@@ -166,11 +174,11 @@ var UIManager = {
 
     var dateLabel = document.getElementById('date-configuration-label');
      // Current time
-    var currentTime = new Date();
+    var now = new Date();
     // Format: 2012-09-01
-    var pDate = document.getElementById('date-configuration').value;
-    var pTime = currentTime.toLocaleFormat('%H:%M');
-    var timeToSet = new Date(pDate + 'T' + pTime);
+    var currentDate = document.getElementById('date-configuration').value;
+    var currentTime = now.toLocaleFormat('%H:%M');
+    var timeToSet = new Date(currentDate + 'T' + currentTime);
     TimeManager.set(timeToSet);
     dateLabel.innerHTML = timeToSet.toLocaleFormat('%Y-%m-%d');
     this.lock = true;
@@ -187,12 +195,14 @@ var UIManager = {
     }
     var timeLabel = document.getElementById('time-configuration-label');
     // Current time
-    var currentTime = new Date();
+    var now = new Date();
     // Format: 2012-09-01
-    var pTime = document.getElementById('time-configuration').value;
-    pTime = '0' + pTime;
-    var pDate = currentTime.toLocaleFormat('%Y-%m-%d');
-    var timeToSet = new Date(pDate + 'T' + pTime);
+    var currentTime = document.getElementById('time-configuration').value;
+    if (currentTime.indexOf(':') == 1) {  // Format: 8:05 --> 08:05
+      currentTime = '0' + currentTime;
+    }
+    var currentDate = now.toLocaleFormat('%Y-%m-%d');
+    var timeToSet = new Date(currentDate + 'T' + currentTime);
     // Set date through API
     TimeManager.set(timeToSet);
     // Set DATE properly

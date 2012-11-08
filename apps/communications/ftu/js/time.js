@@ -3,13 +3,13 @@
 var TimeManager = {
   init: function tm_init() {
     if (window.navigator.mozTime) {
-      this.mozTime = window.navigator.mozTime;
+      this.time = window.navigator.mozTime;
     } else {
       console.log('There is no mozTime available in window');
     }
   },
   set: function tm_set(date) {
-    this.mozTime.set(date);
+    this.time.set(date);
   },
   getTimeZone: function tm_getTZ(gmt) {
     var gmtInt = parseInt(gmt);
