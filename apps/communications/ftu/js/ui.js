@@ -174,11 +174,11 @@ var UIManager = {
 
     var dateLabel = document.getElementById('date-configuration-label');
      // Current time
-    var currentTime = new Date();
+    var now = new Date();
     // Format: 2012-09-01
-    var pDate = document.getElementById('date-configuration').value;
-    var pTime = currentTime.toLocaleFormat('%H:%M');
-    var timeToSet = new Date(pDate + 'T' + pTime);
+    var currentDate = document.getElementById('date-configuration').value;
+    var currentTime = now.toLocaleFormat('%H:%M');
+    var timeToSet = new Date(currentDate + 'T' + currentTime);
     TimeManager.set(timeToSet);
     dateLabel.innerHTML = timeToSet.toLocaleFormat('%Y-%m-%d');
     this.lock = true;
@@ -195,15 +195,14 @@ var UIManager = {
     }
     var timeLabel = document.getElementById('time-configuration-label');
     // Current time
-    var currentTime = new Date();
+    var now = new Date();
     // Format: 2012-09-01
-    var pTime = document.getElementById('time-configuration').value;
-    console.log(pTime);
-    if (pTime.indexOf(':') == 1) {  // Format: 8:05 --> 08:05
-      pTime = '0' + pTime;
+    var currentTime = document.getElementById('time-configuration').value;
+    if (currentTime.indexOf(':') == 1) {  // Format: 8:05 --> 08:05
+      currentTime = '0' + currentTime;
     }
-    var pDate = currentTime.toLocaleFormat('%Y-%m-%d');
-    var timeToSet = new Date(pDate + 'T' + pTime);
+    var currentDate = now.toLocaleFormat('%Y-%m-%d');
+    var timeToSet = new Date(currentDate + 'T' + currentTime);
     // Set date through API
     TimeManager.set(timeToSet);
     // Set DATE properly
