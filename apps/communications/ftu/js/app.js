@@ -11,7 +11,7 @@ var AppManager = {
     UIManager.init();
     Navigation.init();
 
-    var splashTimeout = 10;
+    var splashTimeout = 700;
     // Retrieve mobile connection if available
     var conn = window.navigator.mozMobileConnection;
     if (!conn) {
