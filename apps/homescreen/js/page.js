@@ -19,6 +19,10 @@ Icon.prototype = {
 
   DEFAULT_ICON_URL: window.location.protocol + '//' + window.location.host +
                     '/style/images/default.png',
+  DOWNLOADING_ICON_URL:  window.location.protocol + '//' + window.location.host +
+                    '/style/images/app_downloading.png',
+  CANCELED_ICON_URL:  window.location.protocol + '//' + window.location.host +
+                    '/style/images/app_paused.png',
 
   // These properties will be copied from the descriptor onto the icon's HTML element
   // dataset and allow us to uniquely look up the Icon object from the HTML element.
@@ -70,10 +74,17 @@ Icon.prototype = {
 
     // Image
     var img = this.img = new Image();
-    img.setAttribute('role', 'presentation');
-    img.width = 68;
-    img.height = 68;
-    img.style.visibility = 'hidden';
+    if (descriptor.downloading) {
+      icon.classList.add('loading');
+      img.width = 60;
+      img.height = 60;
+    } else {
+      icon.classList.remove('loading');
+      img.setAttribute('role', 'presentation');
+      img.width = 68;
+      img.height = 68;
+      img.style.visibility = 'hidden';
+    }
     icon.appendChild(img);
     if (descriptor.renderedIcon) {
       this.displayRenderedIcon();
@@ -143,7 +154,7 @@ Icon.prototype = {
 
   loadImageData: function icon_loadImageData(blob) {
     var self = this;
-    var img = new Image();
+    var img = this.img || new Image();
     if (blob) {
       var url = window.URL.createObjectURL(blob);
       img.src = url;
@@ -155,7 +166,9 @@ Icon.prototype = {
       if (blob)
         window.URL.revokeObjectURL(img.src);
 
-      self.renderImage(img);
+      if (!self.descriptor.downloading) {
+        self.renderImage(img);
+      }
     };
 
     img.onerror = function icon_loadError() {
@@ -236,6 +249,11 @@ Icon.prototype = {
     this.app = app;
     var oldDescriptor = this.descriptor;
     this.descriptor = descriptor;
+
+    // Remove any downloading mark
+    if (!descriptor.downloading) {
+      this.icon.classList.remove('loading');
+    }
 
     if (descriptor.icon == oldDescriptor.icon) {
       this.descriptor.renderedIcon = oldDescriptor.renderedIcon;
