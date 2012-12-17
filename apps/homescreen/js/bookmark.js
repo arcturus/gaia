@@ -2,10 +2,10 @@
 'use strict';
 
 var Bookmark = function Bookmark(params) {
-  this.origin = params.url;
-
   this.removable = true;
+
   this.isBookmark = true;
+  this.url = this.bookmarkURL = this.origin = params.bookmarkURL;
 
   this.manifest = {
     name: params.name,
@@ -17,52 +17,20 @@ var Bookmark = function Bookmark(params) {
 };
 
 Bookmark.prototype = {
-  launch: function bookmark_launch(url, name) {
+  launch: function bookmark_launch() {
     var features = {
       name: this.manifest.name.replace(/\s/g, '&nbsp;'),
-      icon: this.manifest.icons['60']
+      icon: this.manifest.icons['60'],
+      remote: true
     };
-
-    if (!Applications.isInstalled(this.origin)) {
-      features.origin = {
-        name: features.name,
-        url: encodeURIComponent(this.origin)
-      };
-    }
-
-    if (url && url !== this.origin && !Applications.isInstalled(url)) {
-      var searchName = navigator.mozL10n.get('wrapper-search-name', {
-        topic: name,
-        name: this.manifest.name
-      }).replace(/\s/g, '&nbsp;');
-
-      features.name = searchName;
-      features.search = {
-        name: searchName,
-        url: encodeURIComponent(url)
-      };
-    }
 
     // The third parameter is received in window_manager without whitespaces
     // so we decice replace them for &nbsp;
-    return window.open(url || this.origin, '_blank', JSON.stringify(features));
+    window.open(this.url, '_blank', JSON.stringify(features));
   },
 
   uninstall: function bookmark_uninstall() {
-    var self = this;
-    HomeState.deleteBookmark(this.origin,
-      function() {
-        if (DockManager.contains(self)) {
-          DockManager.uninstall(self);
-        } else {
-          GridManager.uninstall(self);
-        }
-        Applications.deleteBookmark(self);
-      },
-      function(er) {
-        console.error('Error deleting bookmark ' + er);
-      }
-    );
+    GridManager.uninstall(this);
   }
 };
 
@@ -90,16 +58,9 @@ var BookmarkEditor = {
 
   save: function bookmarkEditor_save() {
     this.data.name = this.bookmarkTitle.value;
-    this.data.url = this.bookmarkUrl.value;
-    var data = this.data;
-    HomeState.saveBookmark(data,
-      function home_okInstallBookmark() {
-        Applications.installBookmark(new Bookmark(data));
-      },
-      function home_errorInstallBookmark(code) {
-        console.error('Error saving bookmark ' + code);
-      }
-    );
+    this.data.bookmarkURL = this.bookmarkUrl.value;
+    var app = new Bookmark(this.data);
+    GridManager.install(app);
     this.close();
   }
 };

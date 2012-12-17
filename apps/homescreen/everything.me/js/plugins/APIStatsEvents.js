@@ -1,8 +1,8 @@
 /*
  * APIStatsEvents class
  */
-Evme.APIStatsEvents = function(Sandbox){
-    var _this = this, config, logger, processedItems, tracker = Sandbox.DoATAPI, tempEventArr = [], templatesStr = "",
+Evme.APIStatsEvents = function Evme_APIStatsEvents(Sandbox){
+    var self = this, config, logger, processedItems, tracker = Sandbox.DoATAPI, tempEventArr = [], templatesStr = "",
         templates = {
             "Results_search": {
                 "userEvent": "pageView",
@@ -15,10 +15,6 @@ Evme.APIStatsEvents = function(Sandbox){
             
             "Searchbar_returnPressed": {
                 "userEvent": "keyboardReturnClick"
-            },
-            
-            "Searchbar_empty": {
-                "userEvent": "searchbarEmpty"
             },
             
             "suggestions_click": {
@@ -41,13 +37,7 @@ Evme.APIStatsEvents = function(Sandbox){
                 "userEvent":"disambiguationClick",
                 "idx": "{index}"
             },
-            
-            "Shortcuts_show": {
-                "userEvent": "shortcutsShow"
-            },
-            "Shortcuts_hide": {
-                "userEvent": "shortcutsHide"
-            },
+
             "Shortcut_click": {
                 "userEvent": "shortcutsClick",
                 "idx": "{index}"
@@ -57,25 +47,10 @@ Evme.APIStatsEvents = function(Sandbox){
                 "query": "{query}"
             },
             "ShortcutsCustomize_show": {
-                "userEvent": "shortcutsFavoritesShow",
-                "numSelected": "{numSelected}",
-                "numSuggested": "{numSuggested}"
+                "userEvent": "shortcutsFavoritesShow"
             },
             "ShortcutsCustomize_done": {
-                "userEvent": "shortcutsFavoritesDoneClick",
-                "numSelected": "{numSelected}",
-                "numSuggested": "{numSuggested}",
-                "numSelectedStartedWith": "{numSelectedStartedWith}",
-                "numSuggestedStartedWith": "{numSuggestedStartedWith}"
-            },
-            
-            "HomepageTrending_click": {
-                "userEvent":"trendingClick",
-                "idx": "{index}",
-                "query": "{query}"
-            },
-            "HomepageTrending_fullCycle": {
-                "userEvent":"trendingFullCycle"
+                "userEvent": "shortcutsFavoritesDoneClick"
             },
             
             "HomepageTip_show": {
@@ -140,10 +115,6 @@ Evme.APIStatsEvents = function(Sandbox){
                 "tipId": "{id}"
             },
             
-            "Searchbar_focus": {
-                "userEvent": "searchbarFocus"
-            },
-            
             "Prompt_show": {
                 "userEvent": "promptShow",
                 "prompt": "{id}",
@@ -165,43 +136,7 @@ Evme.APIStatsEvents = function(Sandbox){
                 "systemText": "{systemText}",
                 "email": "{email}",
             },
-            
-            "Welcome_show": {
-                "userEvent": "welcomeShow"
-            },
-            "Welcome_getTheApp": {
-                "userEvent": "welcomeClickGetTheApp",
-                "text": "{text}"
-            },
-            "Welcome_dismiss": {
-                "userEvent": "welcomeClickToWebApp",
-                "text": "{text}",
-                "page": "{page}"
-            },
-            "Welcome_signup": {
-                "userEvent": "welcomeClickSignup",
-                "text": "{text}",
-                "link": "{href}"
-            },
-            
-            "User_loginShow": {
-                "userEvent": "fbLoginShow"
-            },
-            "User_loginLoaded": {
-                "userEvent": "fbLoginLoaded"
-            },
-            "User_loginCancel": {
-                "userEvent": "fbLoginCancel"
-            },
-            "User_loginClick": {
-                "userEvent": "fbLoginClick"
-            },
-            "User_loginSuccess": {
-                "userEvent": "fbLoginSuccess"
-            },
-            "User_loginFail": {
-                "userEvent": "fbLoginCancel"
-            },
+
             "Url_goTo": {
                 "userEvent": "pageView",
                 "page": "{page}",
@@ -211,7 +146,7 @@ Evme.APIStatsEvents = function(Sandbox){
         
     this.name = "APIStatsEvents";
     
-    this.init = function(_config, _logger){
+    this.init = function init(_config, _logger){
         // set config
         config = _config;
         logger = _logger;
@@ -227,7 +162,7 @@ Evme.APIStatsEvents = function(Sandbox){
         templatesStr = stringify(templates);
 
         // log 
-        logger.debug(_this.name+".init(",config,")");
+        logger.debug(self.name+".init(",config,")");
     };
     
     function stringify(old){
@@ -243,7 +178,7 @@ Evme.APIStatsEvents = function(Sandbox){
     }
     
     // actual report
-    this.dispatch = function(items){
+    this.dispatch = function dispatch(items){
         // leave if no items
         if (!items.length) { return false;}
         
@@ -256,7 +191,7 @@ Evme.APIStatsEvents = function(Sandbox){
         });
     
         // log
-        logger.debug(_this.name+".dispatch(", items,")");
+        logger.debug(self.name+".dispatch(", items,")");
     };
     
     function process(items){
@@ -268,7 +203,7 @@ Evme.APIStatsEvents = function(Sandbox){
         }
         
         // process
-        items.forEach(function(item){
+        items.forEach(function itemIteration(item){
             
             // authenticate
             if (authenticate(item)) {

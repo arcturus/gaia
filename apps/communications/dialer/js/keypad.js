@@ -22,7 +22,11 @@ SettingsListener.observe('phone.ring.keypad', true, function(value) {
 });
 
 var TonePlayer = {
-  _sampleRate: 8000,
+  _frequencies: null, // from gTonesFrequencies
+  _sampleRate: 8000, // number of frames/sec
+  _position: null, // number of frames generated
+  _intervalID: null, // id for the audio loop's setInterval
+  _stopping: false,
 
   init: function tp_init() {
     document.addEventListener('mozvisibilitychange',
@@ -35,28 +39,83 @@ var TonePlayer = {
      return;
 
    this._audio = new Audio();
-   this._audio.mozSetup(2, this._sampleRate);
+   this._audio.mozAudioChannelType = 'normal';
   },
 
-  generateFrames: function tp_generateFrames(soundData, freqRow, freqCol) {
-    var currentSoundSample = 0;
-    var kr = 2 * Math.PI * freqRow / this._sampleRate;
-    var kc = 2 * Math.PI * freqCol / this._sampleRate;
-    for (var i = 0; i < soundData.length; i += 2) {
-      var smoother = 0.5 + (Math.sin((i * Math.PI) / soundData.length)) / 2;
+  // Generating audio frames for the 2 given frequencies
+  generateFrames: function tp_generateFrames(soundData, shortPress) {
+    var position = this._position;
 
-      soundData[i] = Math.sin(kr * currentSoundSample) * smoother;
-      soundData[i + 1] = Math.sin(kc * currentSoundSample) * smoother;
+    var kr = 2 * Math.PI * this._frequencies[0] / this._sampleRate;
+    var kc = 2 * Math.PI * this._frequencies[1] / this._sampleRate;
 
-      currentSoundSample++;
+    for (var i = 0; i < soundData.length; i++) {
+      // Poor man's ADSR
+      // Only short press have a release phase because we don't know
+      // when the long press will end
+      var factor;
+      if (position < 200) {
+        // Attack
+        factor = position / 200;
+      } else if (position > 200 && position < 400) {
+        // Decay
+        factor = 1 - ((position - 200) / 200) * 0.3; // Decay factor
+      } else if (shortPress && position > 800) {
+        // Release, short press only
+        factor = 0.7 - ((position - 800) / 400 * 0.7);
+      } else {
+        // Sustain
+        factor = 0.7;
+      }
+
+      soundData[i] = (Math.sin(kr * position) +
+                      Math.sin(kc * position)) / 2 * factor;
+      position++;
     }
+
+    this._position += soundData.length;
   },
 
-  play: function tp_play(frequencies) {
-    var soundDataSize = this._sampleRate / 4;
-    var soundData = new Float32Array(soundDataSize);
-    this.generateFrames(soundData, frequencies[0], frequencies[1]);
-    this._audio.mozWriteAudio(soundData);
+  start: function tp_start(frequencies, shortPress) {
+    this._frequencies = frequencies;
+    this._position = 0;
+    this._stopping = false;
+
+    // Already playing
+    if (this._intervalID) {
+      return;
+    }
+
+    this._audio.mozSetup(1, this._sampleRate);
+    this._audio.volume = 1;
+
+    // Writing 150ms of sound (duration for a short press)
+    var initialSoundData = new Float32Array(1200);
+    this.generateFrames(initialSoundData, shortPress);
+    this._audio.mozWriteAudio(initialSoundData);
+
+    if (shortPress)
+      return;
+
+    // Long press support
+    // Continuing playing until .stop() is called
+    this._intervalID = setInterval((function audioLoop() {
+      if (this._stopping)
+        return;
+
+      var soundData = new Float32Array(1200);
+      this.generateFrames(soundData);
+      this._audio.mozWriteAudio(soundData);
+    }).bind(this), 60); // Avoiding under-run issues by keeping this low
+  },
+
+  stop: function tp_stop() {
+    this._stopping = true;
+
+    clearInterval(this._intervalID);
+    this._intervalID = null;
+
+    this._audio.src = '';
   },
 
   // If the app loses focus, close the audio stream. This works around an
@@ -73,7 +132,6 @@ var TonePlayer = {
       delete this._audio;
     }
   }
-
 };
 
 var KeypadManager = {
@@ -276,21 +334,6 @@ var KeypadManager = {
           }
         }
       });
-
-      var reopenApp = function reopenApp() {
-        navigator.mozApps.getSelf().onsuccess = function getSelfCB(evt) {
-          var app = evt.target.result;
-          app.launch('dialer');
-        };
-      }
-
-      activity.onsuccess = function() {
-        reopenApp();
-      };
-      activity.onerror = function() {
-        reopenApp();
-      };
-
     } catch (e) {
       console.log('WebActivities unavailable? : ' + e);
     }
@@ -389,30 +432,26 @@ var KeypadManager = {
     if (!key)
       return;
 
+    var telephony = navigator.mozTelephony;
+
     event.stopPropagation();
     if (event.type == 'mousedown') {
       this._longPress = false;
 
       if (key != 'delete') {
         if (keypadSoundIsEnabled) {
-          TonePlayer.play(gTonesFrequencies[key]);
+          // We do not support long press if not on a call
+          TonePlayer.start(gTonesFrequencies[key], !this._onCall);
         }
 
         // Sending the DTMF tone if on a call
-        var telephony = navigator.mozTelephony;
-        if (telephony && telephony.active &&
-            telephony.active.state == 'connected') {
-
+        if (this._onCall) {
           telephony.startTone(key);
-          window.setTimeout(function ch_stopTone() {
-            telephony.stopTone();
-          }, 100);
-
         }
       }
 
       // Manage long press
-      if (key == '0' || key == 'delete') {
+      if ((key == '0' && !this._onCall) || key == 'delete') {
         this._holdTimer = setTimeout(function(self) {
           if (key == 'delete') {
             self._phoneNumber = '';
@@ -433,6 +472,19 @@ var KeypadManager = {
         }, 3000, this);
       }
     } else if (event.type == 'mouseup') {
+      // Stop playing the DTMF/tone after a small delay
+      // or right away if this is a long press
+      var delay = this._longPress ? 0 : 100;
+      if (this._onCall) {
+        if (keypadSoundIsEnabled) {
+          TonePlayer.stop();
+        }
+
+        window.setTimeout(function ch_stopTone() {
+          telephony.stopTone();
+        }, delay);
+      }
+
       // If it was a long press our work is already done
       if (this._longPress) {
         this._longPress = false;
@@ -499,8 +551,18 @@ var KeypadManager = {
 
   _updateAdditionalContactInfoView:
     function kh__updateAdditionalContactInfoView() {
-    var view = CallScreen.activeCall.querySelector('.additionalContactInfo');
-    view.textContent = this._additionalContactInfo;
+    var phoneNumberView = CallScreen.activeCall.querySelector('.number');
+    var additionalview = CallScreen.activeCall.querySelector(
+      '.additionalContactInfo');
+    if (!this._additionalContactInfo || this._additionalContactInfo === '') {
+      additionalview.textContent = '';
+      additionalview.classList.add('noAdditionalContactInfo');
+      phoneNumberView.classList.add('noAdditionalContactInfo');
+    } else {
+      phoneNumberView.classList.remove('noAdditionalContactInfo');
+      additionalview.classList.remove('noAdditionalContactInfo');
+      additionalview.textContent = this._additionalContactInfo;
+    }
   },
 
   restoreAdditionalContactInfo: function kh_restoreAdditionalContactInfo() {
@@ -518,10 +580,10 @@ var KeypadManager = {
       return;
      }
      var transaction = settings.createLock();
-     var request = transaction.get('ro.moz.ril.iccmbdn');
+     var request = transaction.get('ril.iccInfo.mbdn');
      request.onsuccess = function() {
-       if (request.result['ro.moz.ril.iccmbdn']) {
-         CallHandler.call(request.result['ro.moz.ril.iccmbdn']);
+       if (request.result['ril.iccInfo.mbdn']) {
+         CallHandler.call(request.result['ril.iccInfo.mbdn']);
        }
      };
      request.onerror = function() {};
