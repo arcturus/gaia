@@ -5,10 +5,13 @@ requireApp('communications/contacts/test/unit/mock_fb.js');
 requireApp('communications/contacts/test/unit/mock_sdcard.js');
 requireApp('communications/dialer/test/unit/mock_confirm_dialog.js');
 requireApp('communications/contacts/js/contacts_settings.js');
-requireApp('communications/contacts/js/utilities/vcard_parser.js');
+requireApp('communications/contacts/test/unit/mock_vcard_parser.js');
 
 if (!this._) this._ = null;
 if (!this.utils) this.utils = null;
+if (!realSdCard) {
+  var realSdcard = null;
+}
 
 var mocksHelperForContactSettings = new MocksHelper([
   'Contacts', 'AsyncStorage', 'fb', 'ConfirmDialog'

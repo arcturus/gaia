@@ -44,7 +44,7 @@ VCFReader.prototype.process = function(cb) {
 /**
  * Checks if all the contacts have been processed by comparing them to the
  * initial number of entries in the vCard
- * @return {Boolean}
+ * @return {Boolean} return true if processed, false otherwise.
  */
 VCFReader.prototype.checkIfCompleted = function() {
   return this.processedContacts === this.validContacts;
