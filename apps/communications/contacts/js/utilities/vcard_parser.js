@@ -26,15 +26,16 @@ VCFReader.prototype.process = function(cb) {
   var allDone = false;
   var self = this;
 
+  var finalContacts = [];
   this.validContacts = this.rawContacts.length;
   this.rawContacts.forEach(function(ct) { this.save(ct, onParsed); }, this);
-
-  function onParsed() {
-    self.onimported && window.setTimeout(self.onimported, 0);
+  function onParsed(err, ct) {
+    self.onimported && self.onimported();
 
     self.processedContacts += 1;
+    finalContacts.push(ct);
     if (self.checkIfCompleted() && allDone === false) {
-      cb(self.processedContacts);
+      cb(finalContacts);
       allDone = true;
     }
   }
@@ -56,13 +57,11 @@ VCFReader.prototype.checkIfCompleted = function() {
  * @param {Function} cb Callback.
  */
 VCFReader.prototype.save = function(item, cb) {
-//  window.setTimeout(function() {
   var req = navigator.mozContacts.save(item);
   req.onsuccess = function onsuccess() { cb(null, item); };
   req.onerror = function onerror(e) {
     cb('Error saving contact: ' + item.id);
   };
-//  }, 0);
 };
 
 /**
