@@ -12,6 +12,10 @@
  *   - onerror: SIM card us empty or could not be read.
  */
 
+ function debug(msg) {
+  console.log('SIM CONTACTS IMPORT ::: ' + msg);
+ }
+
 function SimContactsImporter() {
   var pointer = 0;
   var CHUNK_SIZE = 5;
@@ -42,6 +46,7 @@ function SimContactsImporter() {
     }
     else {
       if (typeof self.onfinish === 'function') {
+        debug('Notifying we finishted importing contacts');
         self.onfinish();
       }
     }
@@ -51,12 +56,15 @@ function SimContactsImporter() {
     // request contacts with getSimContacts() -- valid types are:
     //   'ADN': Abbreviated Dialing Numbers
     //   'FDN': Fixed Dialing Numbers
+    debug('Starting contact import');
     var request = navigator.mozContacts.getSimContacts('ADN');
 
     request.onsuccess = function onsuccess() {
+      debug('Success getting the contacts, we have ' + request.result.length + ' contacts in the SIM');
       self.items = request.result; // array of mozContact elements
       if (typeof self.onread === 'function') {
         // This way the total number can be known by the caller
+        debug('Notifying client we have ' + self.items.length + ' contacts');
         self.onread(self.items.length);
       }
       startMigration();
@@ -77,14 +85,17 @@ function SimContactsImporter() {
    * let's use it as the default 'givenName' value.
    */
   function importSlice(from) {
+    debug('Importing from ' + from);
     for (var i = from; i < from + CHUNK_SIZE && i < self.items.length; i++) {
       var item = self.items[i];
+      debug('Importing item ' + i + ' ::: ' + JSON.stringify(item));
       item.givenName = item.name;
       for (var j = 0; j < item.tel.length; j++) {
         item.tel[j].type = _('mobile');
       }
       var req = window.navigator.mozContacts.save(item);
       req.onsuccess = function saveSuccess() {
+        debug('Contact ' + i + ' saved correctly');
         continueCb();
       };
       req.onerror = function saveError() {
