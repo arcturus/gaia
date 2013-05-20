@@ -96,3 +96,6 @@ li:active {
   opacity: 0.1;
 }
 
+body[data-online = 'offline'] li > div > img[offline_ready = 'false'] {
+   opacity: 0.6
+}
