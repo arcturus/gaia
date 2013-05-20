@@ -61,6 +61,12 @@ Icon.prototype = {
            (descriptor.entry_point ? descriptor.entry_point : '');
   },
 
+  isOfflineReady: function icon_isOfflineReady() {
+    return !(this.descriptor.isHosted &&
+      !this.descriptor.hasOfflineCache ||
+      this.descriptor.isBookmark);
+  },
+
   /*
    * Renders the icon into the page
    *
@@ -107,6 +113,7 @@ Icon.prototype = {
     img.width = MAX_ICON_SIZE + 4 * SCALE_RATIO;
     img.height = MAX_ICON_SIZE + 4 * SCALE_RATIO;
     img.style.visibility = 'hidden';
+    img.setAttribute('offline_ready', this.isOfflineReady());
     if (descriptor.renderedIcon) {
       this.displayRenderedIcon();
     } else {
