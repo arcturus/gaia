@@ -42,6 +42,11 @@ var steps = {
     onlyForward: false,
     hash: '#browser_privacy',
     requireSIM: false
+  },
+  9: {
+    onlyForward: false,
+    hash: '#autoinstall',
+    requireSIM: false
   }
 };
 
@@ -113,6 +118,9 @@ var Navigation = {
       self.previousStep = self.currentStep;
       self.currentStep++;
       if (self.currentStep > numSteps) {
+        // HACK: Register for auto install, with fixed step
+        UIManager.registerAutoInstall();
+
         // Try to send Newsletter here
         UIManager.sendNewsletter(function newsletterSent(result) {
           if (result) { // sending process ok, we advance

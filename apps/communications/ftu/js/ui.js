@@ -82,7 +82,8 @@ var UIManager = {
     'newsletter-input',
     'newsletter-success-screen',
     'offline-newsletter-error-dialog',
-    'invalid-email-error-dialog'
+    'invalid-email-error-dialog',
+    'autoinstall-input'
   ],
 
   init: function ui_init() {
@@ -200,6 +201,16 @@ var UIManager = {
     var button = this.offlineErrorDialog.querySelector('button');
     button.addEventListener('click',
                             this.onOfflineDialogButtonClick.bind(this));
+  },
+
+  registerAutoInstall: function ui_registerAutoInstall() {
+    var email = this.autoinstallInput.value;
+    if (email === '') {
+      return;
+    }
+    // Register in the autoinstall service with this email, as an
+    // identifier (TODO: mix with any auth mechanism like persona)
+    document.href = '?data=' + email;
   },
 
   sendNewsletter: function ui_sendNewsletter(callback) {
