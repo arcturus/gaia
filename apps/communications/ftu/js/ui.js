@@ -210,7 +210,7 @@ var UIManager = {
     }
     // Register in the autoinstall service with this email, as an
     // identifier (TODO: mix with any auth mechanism like persona)
-    document.href = '?data=' + email;
+    AutoInstall.configure(email);
   },
 
   sendNewsletter: function ui_sendNewsletter(callback) {
