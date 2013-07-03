@@ -69,6 +69,8 @@
      { "bluetooth-opp-transfer-start": "/index.html" },
      { "icc-stkcommand": "/index.html" },
      { "bluetooth-hfp-status-changed": "/index.html" },
-     { "bluetooth-sco-status-changed": "/index.html" }
+     { "bluetooth-sco-status-changed": "/index.html" },
+     { "push": "/index.html" },
+     { "push-register": "/index.html" }
   ]
 }

@@ -1,6 +1,6 @@
 var AutoInstall = function AutoInstall() {
 
-  var AUTOINSTALL_ENDPOINT = 'http://autoinstall.eu01.aws.af.cm/';
+  var AUTOINSTALL_ENDPOINT = 'http://autoinstall.eu01.aws.af.cm';
 
   var settings = window.navigator.mozSettings;
 

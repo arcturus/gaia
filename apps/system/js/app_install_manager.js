@@ -35,7 +35,20 @@ var AppInstallManager = {
     window.addEventListener('mozChromeEvent',
       (function ai_handleChromeEvent(e) {
       if (e.detail.type == 'webapps-ask-install') {
-        this.handleAppInstallPrompt(e.detail);
+        // Check if this is a pending silent install or not
+        var settings = window.navigator.mozSettings;
+        var req = settings.createLock().get('gaia.pending.manifest');
+        req.onsuccess = function() {
+          var currentManifestURL = e.detail.app.manifestURL;
+          var pendingManifest = req.result['gaia.pending.manifest'];
+          if (!pendingManifest || pendingManifest === '' ||
+            pendingManifest != currentManifestURL) {
+            this.handleAppInstallPrompt(e.detail);
+          } else {
+            // Silent install
+            this.dispatchResponse(detail.id, 'webapps-install-granted');
+          }
+        };
       }
     }).bind(this));
 
