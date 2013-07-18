@@ -48,6 +48,9 @@
     <!-- For the build system to include in zip:
     <link href="/shared/js/tag_visibility_monitor.js">
     -->
+    <script defer type="text/javascript" src="/contacts/js/contacts_exporter.js"></script>
+    <script defer type="text/javascript" src="/contacts/js/export/sim.js"></script>
+    <script defer type="text/javascript" src="/contacts/js/export/shim.js"></script>
 
   </head>
 
@@ -260,6 +263,11 @@
                   <li>
                     <button id='toggle-favorite' class="fillflow-row icon icon-fav">
                       Add as favorite
+                    </button>
+                  </li>
+                  <li>
+                    <button id="export-contact" class="fillflow-row action">
+                      Export contact to SIM
                     </button>
                   </li>
                 </ul>
@@ -515,6 +523,15 @@
                 <button class="icon icon-live" data-l10n-id="importOutlook">
                   Outlook
                   <p><span></span><time></time></p>
+                </button>
+              </li>
+            </ul>
+            <header><h2>Export contacts</h2>
+            </header>
+            <ul id="importSources" data-type="list"><!-- style based on id -->
+              <li id="exportSIM" data-source="sim">
+                <button class="icon icon-sim">
+                  Export to SIM card
                 </button>
               </li>
             </ul>

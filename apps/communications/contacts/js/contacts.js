@@ -874,6 +874,7 @@ var Contacts = (function() {
     'cardStateChanged': cardStateChanged,
     'loadFacebook': loadFacebook,
     'close': close,
+    'getCurrentContact': function() { return currentContact; },
     get asyncScriptsLoaded() {
       return asyncScriptsLoaded;
     }
