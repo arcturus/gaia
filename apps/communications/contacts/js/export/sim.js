@@ -1,89 +1,76 @@
 var ContactsSIMExport = function ContactsSIMExport() {
 
-  var contacts;
-  var progressStep;
   var icc = navigator.mozIccManager || (navigator.mozMobileConnection &&
             navigator.mozMobileConnection.icc);
   var finishCallback;
   var exported = [];
   var notExported = [];
+  var numContactsToImport = 0;
 
+  /*
   var setContactsToExport = function setContactsToExport(cts) {
     contacts = cts;
   };
+  */
 
-  var hasDeterminativeProgress = function hasDeterminativeProgress() {
-    return contacts.length > 1;
+  var configure = function configure() {
+    numContactsToImport = window.ContactsExporter.getContactsToImport().length;
   };
 
-  var setProgressStep = function setProgressStep(p) {
-    progressStep = p;
+  var hasDeterminativeProgress = function hasDeterminativeProgress() {
+    return numContactsToImport > 1;
   };
 
   var getExportTitle = function getExportTitle() {
     return 'Export to SIM';
   };
 
-  var doExport = function doExport(cb) {
-    finishCallback = cb;
+  var doExport = function doExport(contact, next) {
     if (!icc) {
-      finishCallback({
-        'reason': 'No SIM'
-      }, contacts.length, 0, 'No SIM detected');
+      // TODO: Better handling for icc errors
       return;
     }
-    _doExport(0);
-  };
-
-  var _doExport = function _doExport(step) {
-    if (step == contacts.length) {
-      finishCallback(null, exported.length, null);
-      return;
-    }
-
-    var continuee = function continuee(success, contact) {
-      var resultArray = success ? exported : notExported;
-      resultArray.push(contact);
-      step++;
-      if (progressStep) {
-        progressStep();
-      }
-      _doExport(step);
-    };
-
-    var theContact = contacts[step];
 
     // Bug 895169
-    if (theContact.email.length == 0) {
-      theContact.email = null;
+    if (contact.email.length == 0) {
+      contact.email = null;
     }
 
-    if (theContact.name.length == 0) {
-      theContact.name = null;
+    if (contact.name.length == 0) {
+      contact.name = null;
     }
 
-    if (theContact.tel.length == 0) {
-      theContact.tel = [{'value': -1}];
+    if (contact.tel.length == 0) {
+      contact.tel = [{'value': -1}];
     }
     // end Bug 895169
-    var request = icc.updateContact('adn', theContact);
+    var request = icc.updateContact('adn', contact);
     request.onsuccess = function onsuccess() {
-      continuee(true, theContact);
+      exported.push(contact);
+      next();
     };
     request.onerror = function onerror() {
-      // Don't send an error, just continue
-      continuee(false, theContact);
+      notExported.push(contact);
+      next();
     };
+  };
 
+  /*
+    Done with all the contacts, we receive an cb where we
+    can post information about what happened in the process
+  */
+  var finish = function finish(cb) {
+    cb(null, exported.length, null);
   };
 
   return {
-    'setContactsToExport': setContactsToExport,
+    //'setContactsToExport': setContactsToExport,
+    'configure': configure,
     'shouldShowProgress': function() { return true },
     'hasDeterminativeProgress': hasDeterminativeProgress,
     'getExportTitle': getExportTitle,
     'doExport': doExport,
-    'setProgressStep': setProgressStep
+    'finish': finish
   };
 
 }();

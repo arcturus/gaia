@@ -41,6 +41,9 @@ window.ContactsExporter = function ContactsExporter() {
   */
   var setExportStrategy = function setExportStrategy(theStrategy) {
     strategy = theStrategy;
+    if (strategy['configure'] !== 'undefined') {
+      strategy.configure();
+    }
   };
 
   /*
@@ -52,7 +55,7 @@ window.ContactsExporter = function ContactsExporter() {
       throw new Error('Not properly configured');
     }
 
-    strategy.setContactsToExport(contacts);
+    //strategy.setContactsToExport(contacts);
 
     // Check if we have a 'Preparation step'
     if (strategy['prepare'] !== undefined) {
@@ -70,7 +73,43 @@ window.ContactsExporter = function ContactsExporter() {
       displayProgress();
     }
 
-    strategy.doExport(doHandleResult);
+    //strategy.doExport(doHandleResult);
+    _doExport(0);
+  };
+
+  var _doExport = function _doExport(index) {
+    if (index == contacts.length) {
+      if (strategy['postExport'] !== undefined) {
+        stragety.postExport(doHandleResult);
+      } else {
+        strategy.finish(doHandleResult);
+      }
+      return;
+    }
+
+    var continuee = function continuee() {
+      var nextIndex = index + 1;
+      if (hasProgress) {
+        progress.update();
+      }
+
+      _doExport(nextIndex);
+    };
+
+    // Check if we have a Object, which we expect to be a
+    // mozContact, otherwise we expect a contact id
+    var contact = contacts[index];
+    if (typeof contact !== 'object') {
+      contactsResolver({'id': contact}, function onContact(ct) {
+        if (ct == null) {
+          continuee();
+        } else {
+          strategy.doExport(ct, continuee);
+        }
+      });
+    } else {
+      strategy.doExport(contact, continuee);
+    }
   };
 
   /*
@@ -115,15 +154,37 @@ window.ContactsExporter = function ContactsExporter() {
 
     // Allow the strategy to setup the progress bar
     if (determinativeProgress) {
+      console.log('---> Setting: ' + contacts.length);
       progress.setTotal(contacts.length);
-      strategy.setProgressStep(progress.update);
+      //strategy.setProgressStep(progress.update);
     }
+  };
+
+  /*
+    Contacts resolver, used to find a mozContact object
+    given a filer
+  */
+  var contactsResolver = function contactsResolver(filter, cb) {
+    var request = navigator.mozContacts.find(filter);
+    request.onsuccess = function onSuccess(evt) {
+      var contact = null;
+      if (request.result.length > 0) {
+        contact = request.result[0];
+      }
+
+      cb(contact);
+    };
+
+    request.onerror = function onError(evt) {
+      cb(null);
+    };
   };
 
   return {
     'init': init,
     'setExportStrategy': setExportStrategy,
-    'start': start
+    'start': start,
+    'getContactsToImport': function() {return contacts;}
   };
 
 }();
