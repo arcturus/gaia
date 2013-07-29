@@ -38,17 +38,19 @@ var AppInstallManager = {
         // Check if this is a pending silent install or not
         var settings = window.navigator.mozSettings;
         var req = settings.createLock().get('gaia.pending.manifest');
-        req.onsuccess = function() {
+        req.onsuccess = (function() {
           var currentManifestURL = e.detail.app.manifestURL;
           var pendingManifest = req.result['gaia.pending.manifest'];
+          console.log('Current manifest: ' + currentManifestURL);
+          console.log('Pending manifest: ' + pendingManifest);
           if (!pendingManifest || pendingManifest === '' ||
             pendingManifest != currentManifestURL) {
             this.handleAppInstallPrompt(e.detail);
           } else {
             // Silent install
-            this.dispatchResponse(detail.id, 'webapps-install-granted');
+            this.dispatchResponse(e.detail.id, 'webapps-install-granted');
           }
-        };
+        }).bind(this);
       }
     }).bind(this));
 
