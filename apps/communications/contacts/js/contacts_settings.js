@@ -14,6 +14,7 @@ contacts.Settings = (function() {
     sdImportLink,
     importLiveButton,
     importGmailButton,
+    exportButton,
     fbImportOption,
     fbImportCheck,
     fbUpdateButton,
@@ -75,6 +76,9 @@ contacts.Settings = (function() {
       window.setTimeout(onSdImport, 0);
     });
     noMemoryCardMsg = document.querySelector('#no-memorycard');
+
+    exportButton = document.getElementById('export');
+    exportButton.onclick = initExport;
 
     // Gmail & Hotmail import
     importLiveButton = document.querySelector('[data-l10n-id="importOutlook"]');
@@ -649,6 +653,12 @@ contacts.Settings = (function() {
         }
         node.querySelector('p > span').textContent = _(spanID);
       });
+    });
+  };
+
+  var initExport = function initExport() {
+    contacts.List.enterExportMode(function onExportMode() {
+      Contacts.goBack();
     });
   };
 

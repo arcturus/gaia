@@ -661,3 +661,11 @@ nav[data-type="scrollbar"] p img {
   left: 25%;
   width: 4.8rem;
 }
+
+.exporting li label {
+  left: -2rem !important;
+}
+
+.exporting li p {
+  padding-left: 2rem !important;
+}

@@ -25,7 +25,13 @@ contacts.List = (function() {
       monitor = null,
       loading = false,
       cancelLoadCB = null,
-      photosById = {};
+      photosById = {},
+      inExportMode = false,
+      exportForm = null,
+      exportButton = null,
+      selectAll = null,
+      deselectAll = null,
+      totalContacts = 0;
 
   // Key on the async Storage
   var ORDER_KEY = 'order.lastname';
@@ -195,6 +201,131 @@ contacts.List = (function() {
     }
   };
 
+  var getExportCheck = function getExportCheck(uuid) {
+    /*
+      <label class="pack-checkbox">
+        <input type="checkbox" name="#uid#"></input>
+        <span></span>
+      </label>
+    */
+    var label = document.createElement('label');
+    label.classList.add('pack-checkbox');
+    var input = document.createElement('input');
+    input.name = 'exportIds[]';
+    input.type = 'checkbox';
+    input.setAttribute('value', uuid);
+    label.appendChild(input);
+    var span = document.createElement('span');
+    label.appendChild(span);
+    return label;
+  };
+
+  var exportAction = function exportAction(evt) {
+    var selected = document.querySelectorAll('[name="exportIds[]"]:checked');
+
+    if (selected.length == 0) {
+      return;
+    }
+
+    var ids = [];
+    for (var contact of selected) {
+      ids.push(contact.value);
+    }
+
+    window.ContactsExporter.init(ids);
+    window.ContactsExporter.setExportStrategy(ContactsSIMExport);
+    window.ContactsExporter.start();
+  };
+
+  var selectsAction = function selectsAction(evt) {
+    evt.preventDefault();
+    var action = evt.target.id;
+
+    var selected = document.querySelectorAll('[name="exportIds[]"]:checked');
+    var countSelected = selected.length;
+
+    switch (action) {
+      case 'deselect-all':
+        if (countSelected == 0) {
+          return;
+        }
+
+        for (var check of selected) {
+          check.checked = false;
+        }
+        deselectAll.disabled = true;
+        selectAll.disabled = false;
+      break;
+      case 'select-all':
+        if (countSelected == totalContacts) {
+          return;
+        }
+
+        var all = document.querySelectorAll('[name="exportIds[]"]');
+        for (var check of all) {
+          check.checked = true;
+        }
+
+        selectAll.disabled = true;
+        deselectAll.disabled = false;
+      break;
+    }
+  };
+
+  var enterExportMode = function enterExportMode(callback) {
+    inExportMode = true;
+
+    if (exportForm === null) {
+      exportForm = document.getElementById('selectable-form');
+      // Menus
+      var menus = document.querySelectorAll(
+        '#view-contacts-list menu[type="toolbar"] button');
+      for (var button of menus) {
+        button.classList.add('hide');
+      }
+
+      exportButton = document.getElementById('export-action');
+      exportButton.classList.remove('hide');
+      exportButton.addEventListener('click', exportAction);
+      selectAll = document.getElementById('select-all');
+      selectAll.addEventListener('click', selectsAction);
+      deselectAll = document.getElementById('deselect-all');
+      deselectAll.addEventListener('click', selectsAction);
+    }
+
+    exportForm.classList.remove('hide');
+
+    var groupList = document.getElementById('groups-list');
+    groupList.classList.add('exporting');
+
+    var domNodes = contactsListView.querySelectorAll(NODE_SELECTOR);
+    for (var node of domNodes) {
+      var label = getExportCheck(node.getAttribute('data-uuid'));
+      node.insertBefore(label, node.firstChild);
+    }
+
+    clearClickHandlers();
+    handleClick(function handleExportClick(id) {
+      var check = document.querySelector('input[value="' + id + '"]');
+      if (!check) {
+        return;
+      }
+
+      check.checked = !check.checked;
+    });
+
+    if (callback) {
+      callback();
+    }
+  };
+
+  var exitExportMode = function exitExportMode() {
+    inExportMode = false;
+
+    // TODO: clean up the mess ;)
+    exportForm.classList.add('hide');
+  };
+
   var initAlphaScroll = function initAlphaScroll() {
     var overlay = document.querySelector('nav[data-type="scrollbar"] p');
     var jumper = document.querySelector('nav[data-type="scrollbar"] ol');
@@ -305,6 +436,11 @@ contacts.List = (function() {
   // argument.  Photos and social marks are lazy loaded.
   var renderContact = function renderContact(contact, container) {
     container = container || createPlaceholder(contact);
+    if (inExportMode) {
+      // Append the extra dom required for the check list
+      var check = getExportCheck(contact.id);
+      container.insertBefore(check, container.firstChild);
+    }
     var fbUid = getFbUid(contact);
     if (fbUid) {
       container.dataset.fbUid = fbUid;
@@ -850,6 +986,7 @@ contacts.List = (function() {
             successCb(chunk);
           onListRendered();
           var showNoContacs = (num === 0);
+          totalContacts = num;
           toggleNoContactsScreen(showNoContacs);
           dispatchCustomEvent('listRendered');
           loading = false;
@@ -1141,6 +1278,7 @@ contacts.List = (function() {
     'updatePhoto': updatePhoto,
     'renderFbData': renderFbData,
     'getHighlightedName': getHighlightedName,
+    'enterExportMode': enterExportMode,
     get chunkSize() {
       return CHUNK_SIZE;
     },

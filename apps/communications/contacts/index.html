@@ -15,6 +15,7 @@
     <link href="/contacts/style/contacts.css" rel="stylesheet">
     <link href="/contacts/style/overlay.css" rel="stylesheet">
     <link href="/contacts/style/search.css" rel="stylesheet">
+    <link href="/contacts/style/import.css" rel="stylesheet">
 
     <script defer src="/contacts/js/activities.js"></script>
     <script defer src="/shared/js/lazy_loader.js"></script>
@@ -65,6 +66,9 @@
           <menu type="toolbar">
             <button role="menuitem" id="add-contact-button"><span class="icon icon-add" data-l10n-id="add">add</span></button>
             <button role="menuitem" id="settings-button"><span class="icon icon-settings" data-l10n-id="settings">settings</span></button>
+            <button  id="export-action" data-l10n-id="export" class="hide">
+              Export
+            </button>
           </menu>
           <h1 data-l10n-id="contacts">Contacts</h1>
         </header>
@@ -110,6 +114,16 @@
               </section>
             </div>
           </div>
+          <form id="selectable-form" role="dialog" data-type="confirm" class="hide no-overlay" style="background:none">
+            <menu id="select-all-wrapper">
+              <button id="deselect-all" class="edit-button" data-l10n-id="deselectAll" disabled="disabled">
+                Deselect all
+              </button>
+              <button id="select-all" class="edit-button" data-l10n-id="selectAll">
+                Select all
+              </button>
+            </menu>
+          </form>
         </article>
         <div id='fixed-container' class='fixed-title'></div>
       </section>
@@ -529,6 +543,11 @@
             <header><h2>Export contacts</h2>
             </header>
             <ul id="importSources" data-type="list"><!-- style based on id -->
+              <li id="export" data-source="sim">
+                <button class="icon icon-sim">
+                  Export
+                </button>
+              </li>
               <li id="exportSIM" data-source="sim">
                 <button class="icon icon-sim">
                   Export to SIM card
