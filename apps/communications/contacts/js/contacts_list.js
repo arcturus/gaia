@@ -227,14 +227,37 @@ contacts.List = (function() {
       return;
     }
 
-    var ids = [];
-    for (var contact of selected) {
-      ids.push(contact.value);
-    }
+    // Get all contacts at once before starting the process
+    utils.overlay.show('Preparing contacts', 'spinner', null);
+    var request = navigator.mozContacts.find({});
+    request.onsuccess = function() {
+      var ids = {};
+      for (var contact of selected) {
+        ids[contact.value] = 0x00;
+      }
 
-    window.ContactsExporter.init(ids);
-    window.ContactsExporter.setExportStrategy(ContactsSIMExport);
-    window.ContactsExporter.start();
+      var contacts = [];
+      var contactsLength = request.result.length;
+      for (var i = 0; i < contactsLength; i++) {
+        if (ids[request.result[i].id] !== undefined) {
+          contacts.push(request.result[i]);
+        }
+      }
+
+      request.result = null;
+      ids = null;
+
+      utils.overlay.hide();
+
+      window.ContactsExporter.init(contacts);
+      window.ContactsExporter.setExportStrategy(ContactsSIMExport);
+      window.ContactsExporter.start();
+    };
+
+    request.onerror = function() {
+      utils.overlay.hide();
+      alert('Error selecting contacts');
+    };
   };
 
   var selectsAction = function selectsAction(evt) {
