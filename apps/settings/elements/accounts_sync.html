@@ -1,0 +1,36 @@
+<element name="accounts-sync" extends="section">
+  <template>
+    
+    <header>
+      <a href="#root"><span class="icon icon-back">back</span></a>
+      <h1 data-l10n-id="accounts-sync"> Accounts &amp; Sync </h1>
+    </header>
+
+    <div>
+      <ul>
+        <li>
+          <label class="pack-switch">
+            <input type="checkbox" data-type="switch" name="firefoxAccount.enabled" class="uninit"/>
+            <span></span>
+          </label>
+          <a href="#firefoxAccount-sync" data-l10-id="firefoxAccount">Firefox Account</a>
+        </li>
+      </ul>
+        <li hidden>
+          <header>
+            <h2 data-l10n-id="fxSyncSettings">Sync Settings</h2>
+          </header>
+          <ul id="fx-sync-list">
+            <li>
+              <label class="pack-checkbox">
+                <input type="checkbox" name="fxSync.contacts" />
+                <span></span>
+              </label>
+              <a data-l10n-id="fxSyncContacts">Sync Contacts</a>
+            </li>
+          </ul>
+        </li>
+    </div>
+
+  </template>
+</element>

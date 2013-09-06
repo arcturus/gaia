@@ -93,6 +93,7 @@
     <link rel="import" href="/elements/bluetooth.html">
     <link rel="import" href="/elements/hotspot_wifi_settings.html">
     <link rel="import" href="/elements/hotspot.html">
+    <link rel="import" href="/elements/accounts_sync.html">
     <link rel="import" href="/elements/sound_selection.html">
     <link rel="import" href="/elements/sound.html">
     <link rel="import" href="/elements/display.html">
@@ -214,6 +215,9 @@
 
     <!-- Connectivity :: Internet Sharing -->
     <section is="hotspot" role="region" id="hotspot"></section>
+
+    <!-- Personalization :: Accounts & Sync -->
+    <section is="accounts-sync" role="region" id="accounts-sync"></section>
 
     <!-- Personalization :: Sound :: Sound Selection -->
     <section is="sound-selection" role="region" id="sound-selection"></section>
@@ -372,6 +376,9 @@
           <h2 data-l10n-id="personalization">Personalization</h2>
         </header>
         <ul>
+          <li>
+            <a id="menuItem-accounts-sync" class="menu-item" href="#accounts-sync" data-l10n-id="accounts-sync">Accounts &amp; Sync</a>
+          </li>
           <li>
             <a id="menuItem-sound" class="menu-item" href="#sound" data-l10n-id="sound">Sound</a>
           </li>
