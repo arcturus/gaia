@@ -28,6 +28,7 @@ contacts.Settings = (function() {
     fbImportCheck,
     fbUpdateButton,
     fbOfflineMsg,
+    bulkDeleteButton,
     noSimMsg,
     noMemoryCardMsg,
     fbTotalsMsg,
@@ -135,6 +136,10 @@ contacts.Settings = (function() {
     exportOptions = document.getElementById('export-options');
     exportOptions.addEventListener('click', exportOptionsHandler);
 
+    // Bulk delete
+    bulkDeleteButton = document.getElementById('bulkDelete');
+    bulkDeleteButton.addEventListener('click', bulkDeleteHandler);
+
     // Getting import sources for updating timestamp & secondary info
     importSources =
       document.querySelectorAll('#import-options li[data-source]');
@@ -217,6 +222,24 @@ contacts.Settings = (function() {
         Contacts.extServices.importLive();
         break;
     }
+  };
+
+  var bulkDeleteHandler = function bulkDeleteHandler(evt) {
+    LazyLoader.load(['/contacts/js/contacts_bulk_delete.js'],
+      function() {
+        var deleteConfirmed = contacts.BulkDelete.confirm();
+        if (deleteConfirmed) {
+          contacts.List.selectFromList('Delete',
+            function onSelectedContacts(promise) {
+              contacts.BulkDelete.performDelete(promise);
+            },
+            null,
+            navigationHandler,
+            'popup'
+          );
+        }
+      }
+    );
   };
 
   function exportOptionsHandler(e) {
