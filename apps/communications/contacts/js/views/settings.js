@@ -227,17 +227,14 @@ contacts.Settings = (function() {
   var bulkDeleteHandler = function bulkDeleteHandler(evt) {
     LazyLoader.load(['/contacts/js/contacts_bulk_delete.js'],
       function() {
-        var deleteConfirmed = contacts.BulkDelete.confirm();
-        if (deleteConfirmed) {
-          contacts.List.selectFromList('Delete',
-            function onSelectedContacts(promise) {
-              contacts.BulkDelete.performDelete(promise);
-            },
-            null,
-            navigationHandler,
-            'popup'
-          );
-        }
+        contacts.List.selectFromList('Delete',
+          function onSelectedContacts(promise) {
+            contacts.BulkDelete.performDelete(promise);
+          },
+          null,
+          navigationHandler,
+          'popup'
+        );
       }
     );
   };

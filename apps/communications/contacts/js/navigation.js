@@ -116,7 +116,8 @@ function navigationStack(currentView) {
       next.classList.add(forwardsClasses.next);
     }
 
-    var zIndex = this.stack[this.stack.length - 1].zIndex + 1;
+    var zIndex = current.style.zIndex + 1;
+
     this.stack.push({ view: nextView, transition: transition,
                       zIndex: zIndex});
     next.style.zIndex = zIndex;
