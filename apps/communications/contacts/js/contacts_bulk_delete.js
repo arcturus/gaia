@@ -51,6 +51,7 @@ contacts.BulkDelete = (function() {
     contact.id = currentId;
     var request = navigator.mozContacts.remove(contact);
     request.onerror = request.onsuccess = function cb() {
+      contacts.List.remove(currentId);
       totalRemoved++;
       progress.update();
       setTimeout(_doDelete.call(null, ids, progress), 100);
