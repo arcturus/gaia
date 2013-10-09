@@ -54,7 +54,9 @@ contacts.BulkDelete = (function() {
       contacts.List.remove(currentId);
       totalRemoved++;
       progress.update();
-      setTimeout(_doDelete.call(null, ids, progress), 100);
+      setTimeout(function() {
+        _doDelete(ids, progress);
+      }, 100);
     };
   };
 
