@@ -12,7 +12,7 @@
  *   - onerror: SIM card is empty or could not be read.
  */
 
-function SimContactsImporter() {
+function SimContactsImporter(targetIcc) {
   var pointer = 0;
   var CHUNK_SIZE = 5;
   var numResponses = 0;
@@ -20,6 +20,7 @@ function SimContactsImporter() {
   var _ = navigator.mozL10n.get;
   var mustFinish = false;
   var loadedMatch = false;
+  var icc = targetIcc;
 
   function notifyFinish() {
     if (typeof self.onfinish === 'function') {
@@ -71,14 +72,11 @@ function SimContactsImporter() {
       document.dispatchEvent(new CustomEvent('matchLoaded'));
     });
 
-    // See bug 870237
-    // To have the backward compatibility for bug 859220.
-    // If we could not get iccManager from navigator,
-    // try to get it from mozMobileConnection.
-    // 'window.navigator.mozMobileConnection.icc' can be dropped
-    // after bug 859220 is landed.
-    var icc = navigator.mozIccManager || (navigator.mozMobileConnection &&
+    // Support old api just in case
+    if (!icc) {
+      icc = navigator.mozIccManager || (navigator.mozMobileConnection &&
                                             navigator.mozMobileConnection.icc);
+    }
     var request;
 
     // request contacts with readContacts() -- valid types are:

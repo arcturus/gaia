@@ -1,9 +1,10 @@
-var ContactsSIMExport = function ContactsSIMExport() {
+var ContactsSIMExport = function ContactsSIMExport(targetIcc) {
 
   var contacts;
   var progressStep;
-  var icc = navigator.mozIccManager || (navigator.mozMobileConnection &&
-            navigator.mozMobileConnection.icc);
+  var icc = targetIcc || (navigator.mozIccManager ||
+    (navigator.mozMobileConnection &&
+            navigator.mozMobileConnection.icc));
   var exported = [];
   var notExported = [];
 

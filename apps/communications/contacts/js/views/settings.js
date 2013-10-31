@@ -20,8 +20,6 @@ contacts.Settings = (function() {
     exportOptions,
     importLiveOption,
     importGmailOption,
-    importSimOption,
-    exportSimOption,
     importSDOption,
     exportSDOption,
     fbImportOption,
@@ -41,10 +39,10 @@ contacts.Settings = (function() {
 
   // Initialise the settings screen (components, listeners ...)
   var init = function initialize() {
-    // To listen to card state changes is needed for enabling import from SIM
-    if (IccHelper.enabled) {
-      IccHelper.oncardstatechange = contacts.Settings.cardStateChanged;
-    }
+    // Create the DOM for our SIM cards and listen to any changes
+    Icc_Handler.generateDOM();
+    Icc_Handler.subscribeToChanges(contacts.Settings.cardStateChanged);
+
     fb.init(function onFbInit() {
       initContainers();
     });
@@ -101,8 +99,6 @@ contacts.Settings = (function() {
 
     // Init panel & elements for caching them
     importSettingsPanel = document.getElementById('import-settings');
-    importSimOption = document.getElementById('import-sim-option');
-    exportSimOption = document.getElementById('export-sim-option');
     importSDOption = document.getElementById('import-sd-option');
     exportSDOption = document.getElementById('export-sd-option');
     importSettingsTitle = document.getElementById('import-settings-title');
@@ -211,7 +207,9 @@ contacts.Settings = (function() {
     var source = e.target.parentNode.dataset.source;
     switch (source) {
       case 'sim':
-        window.setTimeout(requireSimImport.bind(this, onSimImport), 0);
+        var iccId = e.target.parentNode.dataset.iccid;
+        window.setTimeout(requireSimImport.bind(this,
+          onSimImport.bind(this, Icc_Handler.getIccById(iccId))), 0);
         break;
       case 'sd':
         window.setTimeout(requireOverlay.bind(this, onSdImport), 0);
@@ -229,9 +227,10 @@ contacts.Settings = (function() {
     var source = e.target.parentNode.dataset.source;
     switch (source) {
       case 'sim':
+        var iccId = e.target.parentNode.dataset.iccid;
         LazyLoader.load(['/contacts/js/export/sim.js'],
           function() {
-            doExport(new ContactsSIMExport());
+            doExport(new ContactsSIMExport(Icc_Handler.getIccById(iccId)));
           }
         );
         break;
@@ -297,14 +296,11 @@ contacts.Settings = (function() {
   };
 
   // Options checking & updating
-
   var checkSIMCard = function checkSIMCard() {
-    if (!IccHelper.enabled) {
-      enableSIMOptions(false);
-      return;
-    }
-
-    enableSIMOptions(IccHelper.cardState);
+    var statuses = Icc_Handler.getStatus();
+    statuses.forEach(function onStatus(status) {
+      enableSIMOptions(status.iccId, status.cardState);
+    });
   };
 
   // Disables/Enables an option and show the error if needed
@@ -325,7 +321,9 @@ contacts.Settings = (function() {
   };
 
   // Disables/Enables the actions over the sim import functionality
-  var enableSIMOptions = function enableSIMOptions(cardState) {
+  var enableSIMOptions = function enableSIMOptions(iccId, cardState) {
+    var importSimOption = document.getElementById('import-sim-option-' + iccId);
+    var exportSimOption = document.getElementById('export-sim-option-' + iccId);
     var disabled = (cardState !== 'ready' && cardState !== 'illegal');
     updateOptionStatus(importSimOption, disabled, true);
     updateOptionStatus(exportSimOption, disabled, true);
@@ -591,14 +589,17 @@ contacts.Settings = (function() {
   };
 
   // Import contacts from SIM card and updates ui
-  var onSimImport = function onSimImport(evt) {
+  var onSimImport = function onSimImport(icc) {
+    if (icc === null) {
+      return;
+    }
     var progress = Contacts.showOverlay(_('simContacts-reading'),
       'activityBar');
 
     var wakeLock = navigator.requestWakeLock('cpu');
 
     var cancelled = false, contactsRead = false;
-    var importer = new SimContactsImporter();
+    var importer = new SimContactsImporter(icc);
     utils.overlay.showMenu();
     utils.overlay.oncancel = function oncancel() {
       cancelled = true;
@@ -668,7 +669,8 @@ contacts.Settings = (function() {
         callback: function() {
           ConfirmDialog.hide();
           // And now the action is reproduced one more time
-          window.setTimeout(requireSimImport.bind(this, onSimImport), 0);
+          window.setTimeout(requireSimImport.bind(this,
+            onSimImport.bind(this, iccId)), 0);
         }
       };
       Contacts.confirmDialog(null, _('simContacts-error'), cancel, retry);
