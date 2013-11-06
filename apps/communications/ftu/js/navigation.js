@@ -179,7 +179,7 @@ var Navigation = {
       case '#import_contacts':
         UIManager.mainTitle.innerHTML = _('importContacts3');
         // Enabling or disabling SIM import depending on card status
-        SimManager.checkSIMButton();
+        SimManager.checkSIMButtons();
 
         // Enabling or disabling SD import depending on card status
         SdManager.checkSDButton();

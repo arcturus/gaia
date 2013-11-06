@@ -39,7 +39,9 @@ contacts.Settings = (function() {
 
   // Initialise the settings screen (components, listeners ...)
   var init = function initialize() {
-    // Create the DOM for our SIM cards and listen to any changes
+    // Inject the correct dependency to create the DOM for our SIM cards
+    // and listen to any changes
+    Icc_Handler.setDOMGenerator(ContactsSIMDomGenerator);
     Icc_Handler.generateDOM();
     Icc_Handler.subscribeToChanges(contacts.Settings.cardStateChanged);
 

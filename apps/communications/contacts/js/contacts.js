@@ -512,7 +512,8 @@ var Contacts = (function() {
       callback();
     } else {
       Contacts.view('Settings', function viewLoaded() {
-        LazyLoader.load(['/contacts/js/utilities/icc_handler.js',
+        LazyLoader.load(['/contacts/js/utilities/sim_dom_generator.js',
+          '/contacts/js/utilities/icc_handler.js',
           '/shared/js/icc_helper.js'], function() {
           settingsReady = true;
           contacts.Settings.init();

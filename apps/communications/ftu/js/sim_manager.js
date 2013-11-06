@@ -15,10 +15,14 @@ var SimManager = {
 
     _ = navigator.mozL10n.get;
 
-    IccHelper.addEventListener('cardstatechange',
-                               this.handleCardState.bind(this));
+    // Generate the sim import options based on number of iccs
+    // DOM is generated now before setting up the listeners
+    Icc_Handler.setDOMGenerator(FTUSIMDomGenerator);
+    Icc_Handler.generateDOM();
+    Icc_Handler.subscribeToChanges(SimManager.handleCardState.bind(this));
 
-    this.alreadyImported = false;
+    this.alreadyImported = {};
+    this.checkSIMButtons();
   },
 
   handleUnlockError: function sm_handleUnlockError(data) {
@@ -68,10 +72,12 @@ var SimManager = {
     }
   },
 
-  available: function sm_available() {
-    if (!IccHelper.enabled)
+  available: function sm_available(id) {
+    var icc = Icc_Handler.getIccById(id);
+    if (!icc) {
       return false;
-    return (IccHelper.cardState === 'ready');
+    }
+    return icc.cardState === 'ready';
   },
 
  /**
@@ -87,40 +93,51 @@ var SimManager = {
   *   'ready'.
   */
   handleCardState: function sm_handleCardState(callback) {
-    SimManager.checkSIMButton();
+    SimManager.checkSIMButtons();
     this.accessCallback = (typeof callback === 'function') ? callback : null;
-    switch (IccHelper.cardState) {
-      case 'pinRequired':
-        this.showPinScreen();
-        break;
-      case 'pukRequired':
-        this.showPukScreen();
-        break;
-      case 'networkLocked':
-      case 'corporateLocked':
-      case 'serviceProviderLocked':
-        this.showXckScreen();
-        break;
-      default:
-        if (this.accessCallback) {
-          this.accessCallback(IccHelper.cardState === 'ready');
-        }
-        break;
-    }
+    var iccIds = Icc_Handler.getIccIds();
+    var self = this;
+    iccIds.forEach(function onIccId(id) {
+      var icc = Icc_Handler.getIccById(id);
+      switch (icc.cardState) {
+        case 'pinRequired':
+          self.showPinScreen();
+          break;
+        case 'pukRequired':
+          self.showPukScreen();
+          break;
+        case 'networkLocked':
+        case 'corporateLocked':
+        case 'serviceProviderLocked':
+          self.showXckScreen();
+          break;
+        default:
+          if (self.accessCallback) {
+            self.accessCallback(icc.cardState === 'ready');
+          }
+          break;
+      }
+    });
   },
 
-  checkSIMButton: function sm_checkSIMButton() {
-    var simOption = UIManager.simImportButton;
-    // If there is an unlocked SIM we activate import from SIM
-    if (!SimManager.alreadyImported && SimManager.available()) {
-      simOption.removeAttribute('disabled');
-      UIManager.noSim.classList.add('hidden');
-    } else {
-      simOption.setAttribute('disabled', 'disabled');
-      if (!SimManager.alreadyImported) {
-        UIManager.noSim.classList.remove('hidden');
+  checkSIMButtons: function sm_checkSIMButtons() {
+    var iccIds = Icc_Handler.getIccIds();
+    iccIds.forEach(function onIccId(id) {
+      var simOption = UIManager.getSimImportButton(id);
+      if (!simOption) {
+        return;
       }
-    }
+      // If there is an unlocked SIM we activate import from SIM
+      if (SimManager.alreadyImported[id] !== true && SimManager.available(id)) {
+        simOption.removeAttribute('disabled');
+        UIManager.getSimMessage(id).classList.add('hidden');
+      } else {
+        simOption.setAttribute('disabled', 'disabled');
+        if (!SimManager.alreadyImported[id]) {
+          UIManager.getSimMessage(id).classList.remove('hidden');
+        }
+      }
+    });
   },
 
   showPinScreen: function sm_showScreen() {
@@ -368,18 +385,22 @@ var SimManager = {
     }).bind(this);
   },
 
-  importContacts: function sm_importContacts() {
+  importContacts: function sm_importContacts(importButton) {
+    var iccId = importButton.dataset.iccid;
+    var icc = Icc_Handler.getIccById(iccId);
+    if (!icc) {
+      return;
+    }
     // Delay for showing feedback to the user after importing
     var DELAY_FEEDBACK = 300;
     UIManager.navBar.setAttribute('aria-disabled', 'true');
     var progress = utils.overlay.show(_('simContacts-reading'),
                                       'activityBar');
 
-    var importButton = UIManager.simImportButton;
     importButton.setAttribute('disabled', 'disabled');
 
     var cancelled = false, contactsRead = false;
-    var importer = new SimContactsImporter();
+    var importer = new SimContactsImporter(icc);
     utils.overlay.showMenu();
     utils.overlay.oncancel = function oncancel() {
       cancelled = true;
@@ -416,7 +437,7 @@ var SimManager = {
         utils.overlay.hide();
         if (importedContacts !== 0) {
           window.importUtils.setTimestamp('sim');
-          SimManager.alreadyImported = true;
+          SimManager.alreadyImported[iccId] = true;
           if (!cancelled) {
             utils.status.show(_('simContacts-imported3',
                                 {n: importedContacts}));
