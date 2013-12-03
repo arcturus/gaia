@@ -43,10 +43,10 @@ suite('DownloadFormatter', function() {
   });
 
   test(' getFileName', function() {
-    var url = 'http://firefoxos.com/file/nameFile.mp3';
+    var path = '/mnt/sdcard/nameFile.mp3';
     var mockDownload = new MockDownload(
       {
-        url: url
+        path: path
       }
     );
     assert.equal(DownloadFormatter.getFileName(mockDownload), 'nameFile.mp3');
@@ -201,13 +201,12 @@ suite('DownloadFormatter', function() {
 
   test(' getUUID', function() {
     var now = new Date();
+    var expectedUUID = 'download-69';
     var mockDownload = new MockDownload(
       {
-        url: 'http://firefoxos.com/fichero.mp4',
-        startTime: now
+        id: expectedUUID
       }
     );
-    var expectedUUID = 'fichero.mp4' + now.getTime();
     var retrievedUUID = DownloadFormatter.getUUID(mockDownload);
     assert.equal(retrievedUUID, expectedUUID);
   });

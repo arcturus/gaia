@@ -50,9 +50,7 @@
       return _calcPercentage(partial, total);
     },
     getFileName: function(download) {
-      var tmpAnchorElement = document.createElement('a');
-      tmpAnchorElement.href = download.url;
-      return tmpAnchorElement.pathname.split('/').pop(); // filename.php
+      return download.path.split('/').pop(); // filename.ext
     },
     getTotalSize: function(download) {
       var bytes = download.totalBytes;
@@ -75,7 +73,7 @@
       });
     },
     getUUID: function(download) {
-      return this.getFileName(download) + download.startTime.getTime();
+      return download.id || this.getFileName(download);
     }
   };
 
