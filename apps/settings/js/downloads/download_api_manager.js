@@ -30,7 +30,16 @@
 
   function getDownloadId(download) {
     return DownloadFormatter.getUUID(download);
-  };
+  }
+
+  function _deleteDownload(id, callback) {
+    var download = downloadsCache[id];
+    _deleteFromDownloadsCache(id);
+    var req = DownloadHelper.remove(download);
+    req.onsuccess = req.onerror = callback;
+
+    return req;
+  }
 
   var DownloadApiManager = {
     getDownloads: function(onsuccess, onerror, oncomplete) {
@@ -88,12 +97,17 @@
       navigator.mozDownloadManager.ondownloadstart = handler;
     },
 
-    deleteDownload: function(id, callback) {
-      _deleteFromDownloadsCache(id);
-      // TODO Add API Call
-      if (typeof callback === 'function') {
+    deleteDownloads: function(downloadIds, callback) {
+      if (downloadIds == null || downloadIds.length === 0) {
         callback();
+        return;
       }
+
+      var currentId = downloadIds.pop();
+      var self = this;
+      _deleteDownload(currentId, function onDelete() {
+        self.deleteDownloads(downloadIds, callback);
+      });
     },
 
     getDownload: function(id) {
