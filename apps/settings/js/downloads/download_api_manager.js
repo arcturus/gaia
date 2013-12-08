@@ -32,11 +32,12 @@
     return DownloadFormatter.getUUID(download);
   }
 
-  function _deleteDownload(id, callback) {
+  function _deleteDownload(id, successCallback, errorCallback) {
     var download = downloadsCache[id];
     _deleteFromDownloadsCache(id);
     var req = DownloadHelper.remove(download);
-    req.onsuccess = req.onerror = callback;
+    req.onsuccess = successCallback;
+    req.onerror = errorCallback;
 
     return req;
   }
@@ -106,6 +107,9 @@
       var currentId = downloadIds.pop();
       var self = this;
       _deleteDownload(currentId, function onDelete() {
+        self.deleteDownloads(downloadIds, callback);
+      }, onError(msg) {
+        console.error('Could not delete ' + currentId + ' : ' + msg);
         self.deleteDownloads(downloadIds, callback);
       });
     },

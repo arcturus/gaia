@@ -66,6 +66,14 @@ suite('DownloadList', function() {
     emptyContainer.id = 'download-list-empty';
     emptyContainer.classList.add('hide');
     document.body.appendChild(emptyContainer);
+    // Buttons DOM
+    var editModeButtons = ['edit-button', 'close-button',
+      'delete-button', 'edit-select-all', 'edit-deselect-all'];
+    editModeButtons.forEach(function onButton(btn) {
+      var button = document.createElement(button);
+      button.id = 'downloads-' + btn;
+      document.body.appendChild(button);
+    });
 
     mocksHelperForDownloadList.setup();
   });
