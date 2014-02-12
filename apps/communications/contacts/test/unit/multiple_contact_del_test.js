@@ -1,3 +1,9 @@
+/*jshint node: true, browser: true */
+/* globals MockContactsList, MockMozContacts, Mockfb,
+MocksHelper, contactsRemover, contacts */
+
+'use strict';
+
 requireApp('communications/contacts/test/unit/mock_navigation.js');
 requireApp('communications/contacts/test/unit/mock_contacts.js');
 requireApp('communications/contacts/test/unit/mock_mozContacts.js');
@@ -12,19 +18,20 @@ requireApp('communications/contacts/js/contacts.js');
 requireApp('communications/contacts/js/views/settings.js');
 requireApp('communications/contacts/test/unit/mock_contacts_settings.js');
 
-
-if (!this._)
+/* jshint ignore:start */
+if (!this._) {
   this._ = null;
+}
 
-if (!this.utils)
+if (!this.utils) {
   this.utils = null;
+}
+/* jshint ignore:end */
 
 var mocksHelperForDelete = new MocksHelper([
   'Contacts',
   'ConfirmDialog'
 ]).init();
-
-
 
 var subject, fb, realMozL10n, real_, realOverlay, realFb;
 
@@ -36,7 +43,7 @@ suite('Multiple Contacts Delete', function() {
       result.push(contacts[i].id);
     }
     return result;
-  };
+  }
 
   function createSelectPromise() {
     var promise = {
@@ -48,8 +55,9 @@ suite('Multiple Contacts Delete', function() {
       resolve: function resolve(ids) {
         var self = this;
         setTimeout(function onResolve() {
-          if (ids)
+          if (ids) {
             self._selected = ids;
+          }
           self.resolved = true;
           if (self.successCb) {
             self.successCb(self._selected);
@@ -58,7 +66,7 @@ suite('Multiple Contacts Delete', function() {
       }
     };
     return promise;
-  };
+  }
 
   suiteSetup(function() {
     if (!window.utils) {

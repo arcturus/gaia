@@ -1,3 +1,4 @@
+/* globals Contacts, _, utils, contactsRemover */
 'use strict';
 
 var contacts = window.contacts || {};

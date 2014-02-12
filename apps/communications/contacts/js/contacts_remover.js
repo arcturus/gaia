@@ -1,3 +1,4 @@
+/* globals mozContact, fb */
 'use strict';
 
 /*
@@ -14,11 +15,12 @@ function contactsRemover() {
   var totalRemoved = 0;
   var totalSelected = 0;
   var cancelled = false;
+  /*jshint validthis:true */
   var self = this;
   var ids;
 
   this.init = function(cIds, cb) {
-    if (cIds == null || cIds.length == 0) {
+    if (cIds === null || cIds.length === 0) {
       return;
     }
     ids = cIds;
@@ -43,10 +45,12 @@ function contactsRemover() {
   function continueCb(ids) {
     var currentId = ids.shift();
     if (!currentId || cancelled) {
-      if (totalRemoved === totalSelected)
+      if (totalRemoved === totalSelected) {
         notifyFinished();
-      else
+      }
+      else {
         notifyCancelled();
+      }
       return;
     }
     var request = deleteContact(currentId);
@@ -87,7 +91,7 @@ function contactsRemover() {
   function deleteContact(currentID) {
     var request;
     var outreq = {onSuccess: null, onError: null};
-    var contact = contact = new mozContact();
+    var contact = new mozContact();
     contact.id = currentID;
 
     if (fb.isFbContact(contact)) {
@@ -105,3 +109,5 @@ function contactsRemover() {
     return outreq;
   }
 }
+
+window.contactsRemover = contactsRemover;
