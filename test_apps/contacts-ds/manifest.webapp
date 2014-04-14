@@ -1,0 +1,27 @@
+{
+  "name": "ContactsDS",
+  "description": "Contacts To DS app",
+  "version": "1.5",
+  "type": "certified",
+  "launch_path": "/index.html",
+  "developer": {
+    "name": "Gaia Team",
+    "url": "https://github.com/mozilla-b2g/gaia"
+  },
+  "permissions": {
+    "contacts":{ "access": "readwrite" }
+  },
+  "locales": {
+    "en-US": {
+      "name": "Contacts2DS",
+      "description": "Contacts to DataStore"
+    }
+  },
+  "default_locale": "en-US",
+  "datastores-owned": {
+    "contacts": {
+      "access": "readwrite",
+      "description": "Contacts as a DS"
+    }
+  }
+}
