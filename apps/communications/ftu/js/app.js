@@ -60,26 +60,28 @@ navigator.mozL10n.ready(function showBody() {
     };
   };
   getSetting('previous_os', function(previous_os) {
-    getSetting('os', function(os) {
-      // This key determine if udpate ftu exists
-      var stepsKey = previous_os + '..' + os;
-      var hasSteps = previous_os !== '' &&
-        Tutorial.config[stepsKey] !== undefined;
-      if (hasSteps) {
-        // Play the FTU Tuto steps directly on update
-        UIManager.init();
-        UIManager.splashScreen.classList.remove('show');
-        UIManager.activationScreen.classList.remove('show');
-        UIManager.updateScreen.classList.add('show');
-        Tutorial.init(stepsKey);
-      } else {
-        if (!AppManager.isInitialized) {
-          AppManager.init();
+    Tutorial.preload().then(function() {
+      getSetting('os', function(os) {
+        // This key determine if udpate ftu exists
+        var stepsKey = previous_os + '..' + os;
+        var hasSteps = previous_os !== '' &&
+          Tutorial.config[stepsKey] !== undefined;
+        if (hasSteps) {
+          // Play the FTU Tuto steps directly on update
+          UIManager.init();
+          UIManager.splashScreen.classList.remove('show');
+          UIManager.activationScreen.classList.remove('show');
+          UIManager.updateScreen.classList.add('show');
+          Tutorial.init(stepsKey);
         } else {
-          UIManager.initTZ();
-          UIManager.mainTitle.innerHTML = _('language');
+          if (!AppManager.isInitialized) {
+            AppManager.init();
+          } else {
+            UIManager.initTZ();
+            UIManager.mainTitle.innerHTML = _('language');
+          }
         }
-      }
+      });
     });
   });
 });

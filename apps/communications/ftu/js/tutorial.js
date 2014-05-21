@@ -1,20 +1,11 @@
-/* global ScreenLayout,
+/* global ScreenLayout, Promise,
           Utils, FinishScreen */
 /* exported Tutorial */
 
 (function(exports) {
   'use strict';
   // A configuration object.
-  var config = {
-    'default': {
-      maxstepsTiny: 6,
-      maxstepsLarge: 4
-    },
-    '1.3.0.0-prerelease..1.4.0.0-prerelease': {
-      maxstepsTiny: 3,
-      maxstepsLarge: 3
-    }
-  };
+  var config = null;
 
   // Keeps track of the current step
   var currentStep = 1;
@@ -84,6 +75,8 @@
         stepsKey = 'default';
       }
 
+      var stepsConfig = config[stepsKey] || config['default'];
+
       // Update the value of the layout if needed
       // 'ScreenLayout' give us 4 different values
       // tiny: '(max-width: 767px)',
@@ -106,12 +99,11 @@
       }, this);
 
       // Cache max steps taking into account the layout
-      stepsLength.tiny = config[stepsKey].maxstepsTiny;
-      stepsLength.large = config[stepsKey].maxstepsLarge;
+      stepsLength.tiny = stepsConfig.maxstepsTiny;
+      stepsLength.large = stepsConfig.maxstepsLarge;
 
-      if (stepsKey !== 'default') {
-        imageFolder = 'tutorial-' + stepsKey;
-      }
+      // Images folder
+      imageFolder = stepsConfig.imageFolder || 'tutorial';
 
       // Add event listeners
       dom.forwardTutorial.addEventListener('click', this.next.bind(this));
@@ -142,7 +134,25 @@
       FinishScreen.init();
       dom.tutorial.classList.remove('show');
     },
-    config: config
+    config: config,
+    preload: function() {
+      return new Promise(function(resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/ftu/config/config.json', true);
+        xhr.responseType = 'json';
+
+        xhr.onload = function() {
+          config = xhr.response;
+          resolve(config);
+        };
+
+        xhr.onerror = function() {
+          reject();
+        };
+
+        xhr.send(null);
+      });
+    }
   };
 
   exports.Tutorial = Tutorial;
