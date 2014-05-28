@@ -87,6 +87,10 @@ contacts.Details = (function() {
       contacts.NFC.stopListening();
     }
 
+    LazyLoader.load(['/contacts/js/loop/loop.js'], function() {
+      LoopClient.stop();
+    });
+
     if (ActivityHandler.currentlyHandling) {
       ActivityHandler.postCancel();
       Contacts.navigation.home();
@@ -230,6 +234,8 @@ contacts.Details = (function() {
     renderOrg(contact);
 
     renderPhones(contact);
+    // Don't share the FB info
+    renderLoop(contactData);
     renderEmails(contact);
     renderAddresses(contact);
 
@@ -478,6 +484,12 @@ contacts.Details = (function() {
 
       listContainer.appendChild(template);
     }
+  };
+
+  var renderLoop = function renderLoop(contact) {
+    LazyLoader.load(['/contacts/js/loop/loop.js'], function() {
+      LoopClient.start(contact);
+    });
   };
 
   // Check current situation and setup different listener for the button
