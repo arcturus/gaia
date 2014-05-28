@@ -34,8 +34,7 @@ marionette('Contacts > Delete', function() {
       client.helper.waitForElement(selectors.searchLabel).click();
 
       // Check that edit menu goes down
-      var editMenu = client.helper.waitForElement(selectors.editMenu);
-      subject.waitForSlideDown(editMenu);
+      client.helper.waitForElementToDisappear(selectors.editMenu);
     });
   });
 });
