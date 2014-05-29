@@ -1,4 +1,4 @@
-/* global SettingsListener, System, layoutManager, SimPinDialog, Rocketbar */
+/* global SettingsListener, System, SimPinDialog, rocketbar */
 'use strict';
 
 (function(exports) {
@@ -180,7 +180,6 @@
       if (!this.app || !this.app.element) {
         return;
       }
-      this.app.element.setAttribute('aria-hidden', 'true');
       this.switchTransitionState('closing');
     };
 
@@ -192,7 +191,6 @@
 
       this.resetTransition();
       this.app.setVisible(false, true);
-      this.app.element.setAttribute('aria-hidden', 'true');
       this.app.element.classList.remove('active');
     };
 
@@ -204,7 +202,6 @@
       this.app.reviveBrowser();
       this.app.launchTime = Date.now();
       this.app.fadeIn();
-      this.app.element.removeAttribute('aria-hidden');
       this.app.setVisible(true);
 
       // TODO:
@@ -230,7 +227,6 @@
       }
 
       this.resetTransition();
-      this.app.element.removeAttribute('aria-hidden');
       this.app.element.classList.add('active');
       this.app.setVisible(true);
 
@@ -238,13 +234,6 @@
       // May have orientation manager to deal with lock orientation request.
       this.app.setOrientation();
 
-      // this.app.width is defined means we're resized ever.
-      // but this.app.resized may be cleared.
-      if (this.app.resized &&
-          !layoutManager.match(this.app.width,
-            this.app.height - this.app.calibratedHeight())) {
-        this.app.resize();
-      }
       this.app.waitForNextPaint(function() {
         if (this._transitionState !== 'opened') {
           return;
@@ -253,7 +242,7 @@
         // See https://bugzilla.mozilla.org/show_bug.cgi?id=938979
         // XXX: Rocketbar losing input focus
         // See: https://bugzilla.mozilla.org/show_bug.cgi?id=961557
-        if (!SimPinDialog.visible && !Rocketbar.shown) {
+        if (!SimPinDialog.visible && !rocketbar.shown) {
           this.app.focus();
         }
       }.bind(this));

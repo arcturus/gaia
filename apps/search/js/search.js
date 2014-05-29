@@ -72,7 +72,16 @@
      * Adds a search provider
      */
     provider: function(provider) {
-      this.providers[provider.name] = provider;
+      if (!(provider.name in this.providers)) {
+        this.providers[provider.name] = provider;
+      }
+    },
+
+    /**
+     * Removes a search provider
+     */
+    removeProvider: function(provider) {
+      delete this.providers[provider.name];
     },
 
     /**
@@ -284,22 +293,12 @@
      * @param {Object} config Optional configuration.
      */
     navigate: function(url, config) {
-      var features = {
-        remote: true,
-        useAsyncPanZoom: true
-      };
-
-      config = config || {};
-      for (var i in config) {
-        features[i] = config[i];
-      }
-
-      var featureStr = Object.keys(features)
-        .map(function(key) {
-          return encodeURIComponent(key) + '=' +
-            encodeURIComponent(features[key]);
-        }).join(',');
-      window.open(url, '_blank', featureStr);
+      var activity = new window.MozActivity({name: 'view', data: {
+        type: 'url',
+        url: url
+      }});
+      // Keep jshint happy
+      activity.onsuccess = function() {};
     },
 
     requestScreenshot: function(url) {

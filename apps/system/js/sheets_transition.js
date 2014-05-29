@@ -34,6 +34,8 @@ var SheetsTransition = {
       this._new.classList.toggle('outside-edges-left', (direction == 'ltr'));
       this._new.classList.toggle('outside-edges-right', (direction == 'rtl'));
     }
+
+    window.dispatchEvent(new CustomEvent('sheetstransitionstart'));
   },
 
   _lastProgress: null,

@@ -10,7 +10,7 @@ suite('controllers/camera', function() {
     require([
       'app',
       'controllers/camera',
-      'lib/camera',
+      'lib/camera/camera',
       'lib/activity',
       'views/viewfinder',
       'lib/settings',
@@ -69,6 +69,8 @@ suite('controllers/camera', function() {
     this.storage = this.app.storage;
     this.camera = this.app.camera;
 
+    this.camera.cameraList = ['back', 'front'];
+
     // Call the callback
     this.viewfinder.fadeOut.callsArg(0);
 
@@ -85,34 +87,8 @@ suite('controllers/camera', function() {
       this.sandbox.stub(this.CameraController.prototype, 'onHidden');
     });
 
-    test('Should set the capture mode to \'picture\' by default', function() {
-      this.app.settings.mode.selected.withArgs('key').returns('picture');
-      this.controller = new this.CameraController(this.app);
-      assert.isTrue(this.app.camera.setMode.calledWith('picture'));
-    });
-
-    test('Should set the `maxFileSizeBytes` for video recording limits', function() {
-      this.app.activity.data.maxFileSizeBytes = 100;
-      this.controller = new this.CameraController(this.app);
-      assert.isTrue(this.camera.set.calledWith('maxFileSizeBytes', 100));
-    });
-
-    test('Should set the `selectedCamera`', function() {
-      this.camera.set.reset();
-      this.settings.cameras.selected.withArgs('key').returns('back');
-      this.controller = new this.CameraController(this.app);
-      assert.isTrue(this.camera.set.calledWith('selectedCamera', 'back'));
-    });
-
-    test('Should set the `mode`', function() {
-      this.camera.setMode.reset();
-      this.settings.mode.selected.withArgs('key').returns('video');
-      this.controller = new this.CameraController(this.app);
-      assert.isTrue(this.camera.setMode.calledWith('video'));
-    });
-
-    test('Should load the camera', function() {
-      assert.isTrue(this.camera.load.calledOnce);
+    test('Should filter the `cameras` setting based on the camera list', function() {
+      sinon.assert.calledWith(this.settings.cameras.filterOptions, this.camera.cameraList);
     });
 
     test('Should load camera on app `visible`', function() {
@@ -125,7 +101,7 @@ suite('controllers/camera', function() {
 
     test('Should relay focus change events', function() {
       assert.isTrue(this.camera.on.calledWith('change:focus'));
-      assert.isTrue(this.app.firer.calledWith('camera:focuschanged'));
+      assert.isTrue(this.app.firer.calledWith('camera:focusstatechanged'));
     });
 
     test('Should listen to storage:changed', function() {
@@ -136,13 +112,8 @@ suite('controllers/camera', function() {
       assert.isTrue(this.camera.on.calledWith('configured'));
     });
 
-    test('Should disable `cacheConfig` if in activity', function() {
-      assert.equal(this.camera.cacheConfig, undefined);
-
-      this.app.activity.pick = true;
-      this.controller = new this.CameraController(this.app);
-
-      assert.equal(this.camera.cacheConfig, false);
+    test('Should listen to the \'activity:pick\' event', function() {
+      sinon.assert.calledWith(this.app.on, 'activity:pick');
     });
   });
 
@@ -163,8 +134,50 @@ suite('controllers/camera', function() {
     });
   });
 
+  suite('on(\'activity:pick\')', function() {
+    setup(function() {
+      var spy = this.app.on.withArgs('activity:pick');
+      this.callback = spy.args[0][1];
+
+      this.data = { maxFileSizeBytes: 100 };
+      this.callback(this.data);
+    });
+
+    test('Should set `maxFileSizeBytes` on camera', function() {
+      sinon.assert.calledWith(this.camera.set, 'maxFileSizeBytes', 100);
+    });
+
+    test('Should disable the camera boot config caching', function() {
+      this.camera.cacheConfig = true;
+      this.callback({});
+      assert.isFalse(this.camera.cacheConfig);
+    });
+  });
+
   suite('CameraController#onSettingsConfigured()', function() {
     setup(function() {
+
+      // Mock object that mimicks
+      // mozSettings get API. Inside
+      // tests set this.mozSettingsGetResult
+      // define the result of the mock call.
+      navigator.mozSettings = {
+        createLock: function() { return this; },
+        get: function(key) {
+          var mozSettings = this;
+          setTimeout(function() {
+            var result = {};
+            result[key] = 'the-result';
+            mozSettings.onsuccess({
+              target: {
+                result: result
+              }
+            });
+          });
+          return this;
+        }
+      };
+
       this.app.settings.flashModes.selected.returns('on');
       this.app.settings.isoModes.get = sinon.spy();
       this.app.settings.isoModes.selected.returns({key: 'auto'});
@@ -199,15 +212,6 @@ suite('controllers/camera', function() {
       assert.ok(arg.width === 480);
       assert.ok(arg.height === 640);
     });
-
-    test('Should call `camera.configure()` camera after setup', function() {
-      var configure = this.camera.configure;
-
-      assert.ok(configure.calledAfter(this.camera.setRecorderProfile));
-      assert.ok(configure.calledAfter(this.camera.setFlashMode));
-      assert.ok(configure.calledAfter(this.camera.setWhiteBalance));
-      assert.ok(configure.calledAfter(this.camera.setHDR));
-    });
   });
 
   suite('CameraController#onFlashModeChange()', function() {
@@ -225,68 +229,96 @@ suite('controllers/camera', function() {
     });
   });
 
-  suite('CameraController#onRecorderProfileChange()', function() {
-    test('Should call camera.setRecorderProfile with current key', function() {
-      this.controller.onRecorderProfileChange('480p');
-      assert.isTrue(this.camera.setRecorderProfile.calledWith('480p'));
-    });
-  });
-
-  suite('CameraController#setPictureSize()', function() {
+  suite('CameraController#updatePictureSize()', function() {
     setup(function() {
       this.settings.mode.selected
         .withArgs('key')
         .returns('picture');
+
+      this.settings.pictureSizes.selected
+        .withArgs('data')
+        .returns({ width: 400, height: 300 });
+
+      this.viewfinder.fadeOut.callsArg(0);
     });
 
-    test('Should call camera.setPictureSize', function() {
-      this.controller.setPictureSize({ width: 4, height: 3 });
-      var arg = this.camera.setPictureSize.args[0][0];
-      assert.deepEqual(arg, { width: 4, height: 3 });
+    test('Should set the camera pictureSize with the current setting', function() {
+      this.controller.updatePictureSize();
+      var pictureSize = this.camera.setPictureSize.args[0][0];
+      assert.deepEqual(pictureSize, { width: 400, height: 300 });
     });
 
-    test('Should call configure only if in \'picture\' mode', function() {
-      this.controller.setPictureSize({});
-      assert.isTrue(this.camera.configure.called);
+    test('Should fade out the viewfinder first when in video mode', function() {
+      this.controller.updatePictureSize();
+      assert.isTrue(this.viewfinder.fadeOut.calledBefore(this.camera.setPictureSize));
+    });
 
+    test('Should not configure the camera in video mode', function() {
       this.settings.mode.selected
         .withArgs('key')
         .returns('video');
 
-      this.camera.configure.reset();
-      this.controller.setPictureSize({});
-      assert.isFalse(this.camera.configure.called);
+      this.controller.updatePictureSize();
+
+      var args = this.camera.setPictureSize.args[0];
+
+      assert.deepEqual(args[0], { width: 400, height: 300 });
+      assert.deepEqual(args[1], { configure: false });
     });
 
-    test('Should call configure after the viewfinder has faded out', function() {
-      this.controller.setPictureSize({});
-      assert.isTrue(this.camera.configure.calledAfter(this.viewfinder.fadeOut));
+     test('Should not fade out viewfinder in video mode', function() {
+      this.settings.mode.selected
+        .withArgs('key')
+        .returns('video');
+
+      this.controller.updatePictureSize();
+      sinon.assert.notCalled(this.viewfinder.fadeOut);
     });
   });
 
-  suite('CameraController#setRecorderProfile()', function() {
+  suite('CameraController#updateRecorderProfile()', function() {
     setup(function() {
       this.settings.mode.selected
         .withArgs('key')
         .returns('video');
+
+      this.settings.recorderProfiles.selected
+        .withArgs('key')
+        .returns('720p');
+
+      this.viewfinder.fadeOut.callsArg(0);
     });
 
-    test('Should call configure only if in \'video\' mode', function() {
-      this.controller.setRecorderProfile('480p');
-      assert.isTrue(this.camera.configure.called);
+    test('Should set the camera recorderProfile with the current setting', function() {
+      this.controller.updateRecorderProfile();
+      sinon.assert.calledWith(this.camera.setRecorderProfile, '720p');
+    });
 
+    test('Should fade out the viewfinder first when in video mode', function() {
+      this.controller.updateRecorderProfile();
+      assert.isTrue(this.viewfinder.fadeOut.calledBefore(this.camera.setRecorderProfile));
+    });
+
+    test('Should not configure the camera in picture mode', function() {
       this.settings.mode.selected
         .withArgs('key')
         .returns('picture');
 
-      this.camera.configure.reset();
-      this.controller.setRecorderProfile('480p');
-      assert.isFalse(this.camera.configure.called);
+      this.controller.updateRecorderProfile();
+
+      var args = this.camera.setRecorderProfile.args[0];
+
+      assert.equal(args[0], '720p');
+      assert.deepEqual(args[1], { configure: false });
     });
 
-    test('Should call configure after the viewfinder has faded out', function() {
-      this.controller.setRecorderProfile('480p');
-      assert.isTrue(this.camera.configure.calledAfter(this.viewfinder.fadeOut));
+     test('Should not fade out viewfinder in picture mode', function() {
+      this.settings.mode.selected
+        .withArgs('key')
+        .returns('picture');
+
+      this.controller.updateRecorderProfile();
+      sinon.assert.notCalled(this.viewfinder.fadeOut);
     });
   });
 
@@ -303,15 +335,21 @@ suite('controllers/camera', function() {
   });
 
   suite('CameraController#setHDR()', function() {
+    setup(function() {
+      this.settings.hdr.selected
+        .withArgs('key')
+        .returns('on');
+    });
+
     test('Should call camera.setHDR with given value', function() {
-      this.controller.setHDR('on');
-      assert.isTrue(this.camera.setHDR.calledWith('on'));
+      this.controller.setHDR();
+      sinon.assert.calledWith(this.camera.setHDR, 'on');
     });
 
     test('Should not call camera.setHDR if `hdrDisabled`', function() {
       this.controller.hdrDisabled = true;
-      this.controller.setHDR('on');
-      assert.isFalse(this.camera.setHDR.called);
+      this.controller.setHDR();
+      sinon.assert.notCalled(this.camera.setHDR);
     });
   });
 

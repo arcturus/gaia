@@ -9,11 +9,14 @@ require.config({
     'settings': {
       exports: 'Settings'
     },
+    'shared/async_storage': {
+      exports: 'AsyncStorage'
+    },
+    'shared/keyboard_helper': {
+      exports: 'KeyboardHelper'
+    },
     'shared/lazy_loader': {
       exports: 'LazyLoader'
-    },
-    'shared/settings_listener': {
-      exports: 'SettingsListener'
     },
     'shared/manifest_helper': {
       exports: 'ManifestHelper'
@@ -21,8 +24,8 @@ require.config({
     'shared/screen_layout': {
       exports: 'ScreenLayout'
     },
-    'shared/keyboard_helper': {
-      exports: 'KeyboardHelper'
+    'shared/settings_listener': {
+      exports: 'SettingsListener'
     }
   },
   modules: [
@@ -37,11 +40,11 @@ require.config({
       ]
     },
     {
-      name: 'panels/send_feedback/panel',
+      name: 'panels/feedback_send/panel',
       exclude: ['main']
     },
     {
-      name: 'panels/choose_feedback/panel',
+      name: 'panels/feedback_choose/panel',
       exclude: ['main']
     },
     {
@@ -55,6 +58,51 @@ require.config({
     {
       name: 'panels/app_permissions_list/panel',
       exclude: ['main']
+    },
+    {
+      name: 'panels/screen_lock/panel',
+      exclude: ['main']
+    },
+    {
+      name: 'panels/screen_lock_passcode/panel',
+      exclude: ['main']
+    },
+    {
+      name: 'panels/keyboard/panel',
+      exclude: [
+        'main',
+        'modules/mvvm/list_view',
+        'modules/mvvm/observable',
+        'modules/mvvm/observable_array',
+        'modules/keyboard_context'
+      ]
+    },
+    {
+      name: 'panels/keyboard_add_layouts/panel',
+      exclude: [
+        'main',
+        'modules/mvvm/list_view',
+        'modules/mvvm/observable',
+        'modules/mvvm/observable_array',
+        'modules/keyboard_context',
+        'shared/keyboard_helper'
+      ]
+    },
+    {
+      name: 'panels/keyboard_enabled_layouts/panel',
+      exclude: [
+        'main',
+        'modules/mvvm/list_view',
+        'modules/mvvm/observable',
+        'modules/mvvm/observable_array',
+        'modules/keyboard_context'
+      ]
+    },
+    {
+      name: 'panels/keyboard_enabled_default/dialog',
+      exclude: [
+        'main'
+      ]
     }
   ]
 });

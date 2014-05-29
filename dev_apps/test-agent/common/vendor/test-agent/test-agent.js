@@ -1408,8 +1408,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   }
 
   var Base = TestAgent.Mocha.ReporterBase,
-      exports = window.TestAgent.Mocha,
-      log = console.log.bind(console);
+      exports = window.TestAgent.Mocha;
 
   MochaReporter.console = window.console;
   MochaReporter.send = function mochaReporterSend() {};
@@ -1426,29 +1425,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         suiteTitle,
         currentTest;
 
-    MochaReporter.console.log = function consoleLogShim() {
-      var args = Array.prototype.slice.call(arguments),
-          message = TestAgent.format.apply(TestAgent, arguments);
-      //real console log
-      log.apply(this, arguments);
-
-      //for server
-
-      var stack, messages = args.map(function(item) {
-        if (!item) {
-          return item;
-        }
-        return (item.toString) ? item.toString() : item;
-      });
-
-      try {
-        throw new Error();
-      } catch (e) {
-        stack = e.stack;
-      }
+    function consoleShim(type) {
+      var args = Array.prototype.slice.call(arguments, 1),
+          messages = args,
+          stack = new Error().stack;
 
       if (stack) {
-        //re-orgnaize the stack to exlude the above
+        // Re-organize the stack to exlude the above
         stack = stack.split('\n').map(function(e) {
           return e.trim().replace(/^at /, '');
         });
@@ -1457,18 +1440,29 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         stack = stack.join('\n');
       }
 
-      //this is temp
-      var logDetails = {messages: [message], stack: stack };
+      if (type === 'trace') {
+        messages = [stack];
+        type = 'log';
+      }
 
+      var logDetails = { messages: messages, stack: stack };
 
       if (MochaReporter.testAgentEnvId) {
         logDetails.testAgentEnvId = MochaReporter.testAgentEnvId;
       }
 
       MochaReporter.send(
-        JSON.stringify(['log', logDetails])
+        JSON.stringify([type, logDetails])
       );
     };
+
+    MochaReporter.console.debug = consoleShim.bind(null, 'log');
+    MochaReporter.console.log = consoleShim.bind(null, 'log');
+    MochaReporter.console.info = consoleShim.bind(null, 'info');
+    MochaReporter.console.warn = consoleShim.bind(null, 'warn');
+    MochaReporter.console.error = consoleShim.bind(null, 'error');
+    MochaReporter.console.dir = consoleShim.bind(null, 'dir');
+    MochaReporter.console.trace = consoleShim.bind(null, 'trace');
 
     runner.on('suite', function onSuite(suite) {
       indentation++;
@@ -1674,8 +1668,28 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     // We ignore log if coverage is enabled
     if (!this.coverage) {
-      this.on('log', function onLog(data) {
-        console.log.apply(console, data.messages);
+      this.on({
+
+        'log': function onLog(data) {
+          console.log.apply(console, data.messages);
+        },
+
+        'info': function onInfo(data) {
+          console.info.apply(console, data.messages);
+        },
+
+        'warn': function onWarn(data) {
+          console.warn.apply(console, data.messages);
+        },
+
+        'error': function onError(data) {
+          console.error.apply(console, data.messages);
+        },
+
+        'dir': function onDir(data) {
+          console.dir.apply(console, data.messages);
+        }
+
       });
     }
 
@@ -2295,80 +2309,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     module.exports = Mocha;
   } else {
     TestAgent.Common.MochaTestEvents = Mocha;
-  }
-
-}());
-(function() {
-
-  var isNode = typeof(window) === 'undefined';
-
-  if (!isNode) {
-    if (typeof(TestAgent.Common) === 'undefined') {
-      TestAgent.Common = {};
-    }
-  }
-
-  function Blanket() {
-
-  }
-
-  Blanket.prototype = {
-
-    enhance: function enhance(server) {
-      server.on('coverage data', this._onCoverageData.bind(this));
-
-      if (typeof(window) !== 'undefined') {
-        window.addEventListener('message', function(event) {
-          var data = event.data;
-          if (/coverage info/.test(data)) {
-            server.send('coverage data', data);
-          }
-        });
-      }
-    },
-
-    _onCoverageData: function _onCoverageData(data) {
-      var data = JSON.parse(data);
-      data.shift();
-      this._printCoverageResult(data.shift());
-    },
-
-    _printCoverageResult: function _printCoverageResult(coverResults) {
-      var key,
-          titleColor = '\033[1;36m',
-          fileNameColor = '\033[0;37m',
-          stmtColor = '\033[0;33m',
-          percentageColor = '\033[0;36m',
-          originColor = '\033[0m';
-
-      // Print title
-      console.info('\n' + titleColor + '-- Blanket.js Test Coverage Result --' + originColor + '\n');
-      console.info(fileNameColor + 'File Name' + originColor +
-        ' - ' + stmtColor + 'Covered/Total Smts' + originColor +
-        ' - ' + percentageColor + 'Coverage (\%)\n' + originColor);
-
-      // Print coverage result for each file
-      coverResults.forEach(function(dataItem) {
-        var filename = dataItem.filename,
-            formatPrefix = (filename === "Global Total" ? "\n" : "  "),
-            seperator = ' - ';
-
-        filename = (filename === "Global Total" ? filename :
-          (filename.substr(0, filename.indexOf('?')) || filename));
-        outputFormat = formatPrefix;
-        outputFormat += fileNameColor + filename + originColor + seperator;
-        outputFormat += stmtColor + dataItem.stmts + originColor  + seperator;
-        outputFormat += percentageColor + dataItem.percentage + originColor;
-
-        console.info(outputFormat);
-      });
-    }
-  }
-
-  if (isNode) {
-    module.exports = Blanket;
-  } else {
-    TestAgent.Common.BlanketCoverEvents = Blanket;
   }
 
 }());
@@ -3106,6 +3046,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
         //setup mocha
         box.mocha.setup({
+          ignoreLeaks: true,
           globals: globalIgnores,
           ui: self.ui,
           reporter: self.getReporter(box),
@@ -3352,13 +3293,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     get execButton() {
       if (!this._execButton) {
-        this._execButton = document.querySelector('#test-agent-execute-button');
+        this._execButton = document.getElementById('test-agent-execute-button');
       }
       return this._execButton;
     },
 
     get command() {
-      var covCheckbox = document.querySelector('#test-agent-coverage-checkbox'),
+      var covCheckbox = document.getElementById('test-agent-coverage-checkbox'),
           covFlag = covCheckbox ? covCheckbox.checked : false;
 
       if (covFlag) {
@@ -3419,7 +3360,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
     onConfig: function onConfig(data) {
       //purge elements
-      var elements = document.querySelectorAll('.test-list'),
+      var elements = document.getElementsByClassName('.test-list'),
           element,
           templates = this.templates,
           parent;
@@ -3490,16 +3431,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   };
 
 }(this));
-
 (function() {
   'use strict';
 
-  function BlanketReporter(options) {
+  function BlanketReportCollector(options) {
     var key;
 
-    if (typeof(options) === 'undefined') {
-      options = {};
-    }
+    options = options || {};
 
     for (key in options) {
       if (options.hasOwnProperty(key)) {
@@ -3508,11 +3446,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     }
   }
 
-  BlanketReporter.prototype = {
+  BlanketReportCollector.prototype = {
 
-    enhance: function enhance(worker) {
+    enhance: function enhance(server) {
+      this.server = server;
       this._receiveCoverageData();
-      worker.on('test runner end', this._aggregateReport.bind(this));
+      server.on('test runner end', this._onTestRunnerEnd.bind(this));
     },
 
     _coverageResults: [],
@@ -3524,7 +3463,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     _receiveCoverageData: function() {
       var self = this;
 
-      if (typeof(window) !== 'undefined') {
+      if (window) {
         window.addEventListener('message', function(event) {
           var data = JSON.parse(event.data);
 
@@ -3535,14 +3474,51 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       }
     },
 
+    _onTestRunnerEnd: function() {
+      this._aggregateReport();
+      this._coverageResults = [];
+    },
+
+    _aggregateReport: function() {
+      var data = this._coverageResults,
+          aggregateResult,
+          self = this;
+
+      aggregateResult = data.reduce(function(aggregateResult, coverageResult) {
+        var aggregateFiles = aggregateResult.files,
+            coverageFiles = coverageResult.files;
+
+        for (var file in coverageFiles) {
+          if (!(file in aggregateFiles)) {
+            aggregateFiles[file] = coverageFiles[file];
+          } else {
+            aggregateFiles[file] = self._accumulateCoverageFile(
+              aggregateFiles[file], coverageFiles[file]);
+          }
+        }
+
+        if (!aggregateResult.stats) {
+          aggregateResult.stats = coverageResult.stats;
+        } else {
+          aggregateResult.stats = self._accumulateCoverageStats(
+            aggregateResult.stats, coverageResult.stats);
+        }
+
+        return aggregateResult;
+      }, this._templateResult());
+
+      this._splitReportByDomain(aggregateResult);
+    },
+
     _splitReportByDomain: function(results) {
       var multiDomainResults = [],
           previousDomain,
           currentDomain,
-          index = -1;
+          index = -1,
+          self = this;
 
       for (var file in results.files) {
-        currentDomain = new URL(file).hostname
+        currentDomain = new URL(file).hostname;
 
         if (currentDomain !== previousDomain) {
           previousDomain = currentDomain;
@@ -3553,38 +3529,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         multiDomainResults[index].files[file] = results.files[file];
       }
 
+      // After aggregated every coverage result for each domain, we invoke
+      // blanket's default reporter
       multiDomainResults.forEach(function(domainResult) {
-        blanket.defaultReporter(domainResult);
+        window.blanket.defaultReporter(domainResult);
+        self.server.send('coverage report', domainResult);
       }, this);
-    },
-
-    _aggregateReport: function() {
-      var coverageResults = this._coverageResults,
-          aggregateResult,
-          self = this;
-
-      aggregateResult = coverageResults.reduce(function(aggregateResult, coverageResult) {
-        var aggregateFiles = aggregateResult.files,
-            coverageFiles = coverageResult.files;
-
-        for (var file in coverageFiles) {
-          if (!(file in aggregateFiles)) {
-            aggregateFiles[file] = coverageFiles[file];
-          } else {
-            aggregateFiles[file] = self._accumulateCoverageFile(aggregateFiles[file], coverageFiles[file]);
-          }
-        }
-
-        if (!aggregateResult.stats) {
-          aggregateResult.stats = coverageResult.stats;
-        } else {
-          aggregateResult.stats = self._accumulateCoverageStats(aggregateResult.stats, coverageResult.stats);
-        }
-
-        return aggregateResult;
-      }, this._templateResult());
-
-      this._splitReportByDomain(aggregateResult);
     },
 
     _accumulateCoverageFile: function(aggregateFile, coverageFile) {
@@ -3604,7 +3554,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     _accumulateCoverageStats: function(aggregateStats, coverageStats) {
       for (var key in coverageStats) {
         if (coverageStats.hasOwnProperty(key)) {
-          if (typeof coverageStats[key] === 'number') {
+          if (typeof(coverageStats[key]) === 'number') {
             aggregateStats[key] += coverageStats[key];
           } else {
             aggregateStats.end = coverageStats.end;
@@ -3617,6 +3567,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
   };
 
-  window.TestAgent.Common.BlanketReporter = BlanketReporter;
+  window.TestAgent.Common.BlanketReportCollector = BlanketReportCollector;
 
 })();

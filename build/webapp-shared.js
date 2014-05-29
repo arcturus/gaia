@@ -15,7 +15,8 @@ WebappShared.prototype.setOptions = function(options) {
     resources: [],       // List of resources to copy
     styles: [],          // List of stable style names to copy
     unstable_styles: [], // List of unstable style names to copy
-    elements: []         // List of elements names to copy
+    elements: [],         // List of elements names to copy,
+    pages: []            // List of pages to copy
   };
   this.localesFile = utils.resolve(this.config.LOCALES_FILE,
     this.config.GAIA_DIR);
@@ -154,6 +155,29 @@ WebappShared.prototype.pushJS = function(path) {
   this.moveToBuildDir(file, pathInStage);
 };
 
+WebappShared.prototype.copyPage = function(path) {
+  var file = this.gaia.sharedFolder.clone();
+  file.append('pages');
+  path.split('/').forEach(function(segment) {
+    file.append(segment);
+  });
+
+  if (!file.exists()) {
+    throw new Error('Using inexistent shared page file: ' + path +
+                    ' from: ' + this.webapp.domain);
+  }
+
+  var pathInStage = 'shared/pages/' + path;
+  this.moveToBuildDir(file, pathInStage);
+
+  let extension = utils.getExtension(file.leafName);
+  // If it is an HTML file we need to check for the referenced shared
+  // resources
+  if (extension === 'html') {
+    this.filterSharedUsage(file);
+  }
+}
+
 WebappShared.prototype.pushResource = function(path) {
   let file = this.gaia.sharedFolder.clone();
   file.append('resources');
@@ -241,6 +265,34 @@ WebappShared.prototype.pushElements = function(path) {
   }
   var pathInStage = 'shared/elements/' + path;
   this.moveToBuildDir(file, pathInStage);
+
+  // Handle image assets for web components
+  var paths = path.split('/');
+  if (paths.length <= 1) {
+    return;
+  }
+
+  var elementName = String(paths.shift());
+
+  // Only handle web components for now (start with gaia_)
+  if (elementName.indexOf('gaia_') !== 0) {
+    return;
+  }
+
+  // Copy possible resources from components.
+  var resources = ['style.css', 'css', 'js', 'images'];
+  resources.forEach(function(resource) {
+    var eachFile = this.gaia.sharedFolder.clone();
+    eachFile.append('elements');
+    eachFile.append(elementName);
+    eachFile.append(resource);
+
+    if (eachFile.exists()) {
+      var stagePath = 'shared/' + eachFile.getRelativeDescriptor(
+        this.gaia.sharedFolder);
+      this.moveToBuildDir(eachFile, stagePath);
+    }
+  }, this);
 };
 
 WebappShared.prototype.pushFileByType = function(kind, path) {
@@ -249,6 +301,12 @@ WebappShared.prototype.pushFileByType = function(kind, path) {
   }
 
   switch (kind) {
+    case 'pages':
+      if (this.used.pages.indexOf(path) === -1) {
+        this.used.pages.push(path);
+        this.copyPage(path);
+      }
+      break;
     case 'js':
       if (this.used.js.indexOf(path) === -1) {
         this.used.js.push(path);
@@ -276,12 +334,10 @@ WebappShared.prototype.pushFileByType = function(kind, path) {
       }
       break;
     case 'locales':
-      if (this.config.GAIA_INLINE_LOCALES !== '1') {
-        var localeName = path.substr(0, path.lastIndexOf('.'));
-        if (this.used.locales.indexOf(localeName) === -1) {
-          this.used.locales.push(localeName);
-          this.pushLocale(localeName);
-        }
+      var localeName = path.substr(0, path.lastIndexOf('.'));
+      if (this.used.locales.indexOf(localeName) === -1) {
+        this.used.locales.push(localeName);
+        this.pushLocale(localeName);
       }
       break;
     case 'elements':

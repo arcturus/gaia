@@ -484,7 +484,7 @@ var KeypadManager = {
   }
 };
 
-navigator.mozL10n.once(() => {
+navigator.mozL10n.once(function onL10nInit() {
   // <body> children are hidden until the UI is translated
   document.body.classList.remove('hidden');
 });

@@ -12,8 +12,8 @@ var bindAll = require('lib/bind-all');
  * Exports
  */
 
-exports = module.exports = function(app) { return new CameraController(app); };
-exports.CameraController = CameraController;
+module.exports = function(app) { return new CameraController(app); };
+module.exports.CameraController = CameraController;
 
 /**
  * Initialize a new `CameraController`
@@ -30,7 +30,7 @@ function CameraController(app) {
   this.viewfinder = app.views.viewfinder;
   this.controls = app.views.controls;
   this.hdrDisabled = this.settings.hdr.get('disabled');
-  this.localize = app.localize;
+  this.l10nGet = app.l10nGet;
   this.configure();
   this.bindEvents();
   debug('initialized');
@@ -44,8 +44,9 @@ CameraController.prototype.bindEvents = function() {
   // Relaying camera events means other modules
   // don't have to depend directly on camera
   camera.on('change:videoElapsed', app.firer('camera:recorderTimeUpdate'));
+  camera.on('focusconfigured',  app.firer('camera:focusconfigured'));
+  camera.on('change:focus', app.firer('camera:focusstatechanged'));
   camera.on('filesizelimitreached', this.onFileSizeLimitReached);
-  camera.on('change:focus', app.firer('camera:focuschanged'));
   camera.on('change:recording', app.setter('recording'));
   camera.on('newcamera', app.firer('camera:newcamera'));
   camera.on('newimage', app.firer('camera:newimage'));
@@ -57,18 +58,20 @@ CameraController.prototype.bindEvents = function() {
   camera.on('busy', app.firer('camera:busy'));
 
   // App
+  app.on('viewfinder:focuspointchanged', this.onFocusPointChanged);
   app.on('previewgallery:opened', this.onPreviewGalleryOpened);
   app.on('change:batteryStatus', this.onBatteryStatusChange);
   app.on('settings:configured', this.onSettingsConfigured);
   app.on('storage:changed', this.onStorageChanged);
+  app.on('activity:pick', this.onPickActivity);
   app.on('timer:ended', this.capture);
   app.on('visible', this.camera.load);
   app.on('capture', this.capture);
   app.on('hidden', this.onHidden);
 
   // Settings
-  settings.recorderProfiles.on('change:selected', this.onRecorderProfileChange);
-  settings.pictureSizes.on('change:selected', this.onPictureSizeChange);
+  settings.recorderProfiles.on('change:selected', this.updateRecorderProfile);
+  settings.pictureSizes.on('change:selected', this.updatePictureSize);
   settings.flashModes.on('change:selected', this.onFlashModeChange);
   settings.flashModes.on('change:selected', this.setFlashMode);
   settings.cameras.on('change:selected', this.setCamera);
@@ -80,33 +83,13 @@ CameraController.prototype.bindEvents = function() {
 };
 
 /**
- * Configure the camera with
- * initial configuration derived
- * from various startup parameters.
+ * Configure the 'cameras' setting using the
+ * `cameraList` data given by the camera hardware
  *
  * @private
  */
 CameraController.prototype.configure = function() {
-  var camera = this.camera;
-
-  // Configure the 'cameras' setting using the
-  // cameraList data given by the camera hardware
-  this.settings.cameras.filterOptions(camera.cameraList);
-
-  // This is set so that the video recorder can
-  // automatically stop when video size limit is reached.
-  camera.set('maxFileSizeBytes', this.activity.data.maxFileSizeBytes);
-  camera.set('selectedCamera', this.settings.cameras.selected('key'));
-  camera.setMode(this.settings.mode.selected('key'));
-
-  // Disable camera config caches when in activity
-  // to prevent activity specific configuration persisting.
-  if (this.activity.pick) { camera.cacheConfig = false; }
-
-  // Load the camera, passing in a previous
-  // mozCameraConfig that may have been
-  // retreved from persistent storage.
-  camera.load();
+  this.settings.cameras.filterOptions(this.camera.cameraList);
   debug('configured');
 };
 
@@ -123,12 +106,36 @@ CameraController.prototype.onSettingsConfigured = function() {
   this.setWhiteBalance();
   this.setFlashMode();
   this.setISO();
-  this.setHDR(this.settings.hdr.selected('key'));
-  this.camera
-    .setRecorderProfile(recorderProfile)
-    .setPictureSize(pictureSize)
-    .configureZoom()
-    .configure();
+  this.setHDR();
+
+  this.camera.setRecorderProfile(recorderProfile);
+  this.camera.setPictureSize(pictureSize);
+  this.camera.configureZoom();
+
+  // Bug 983930 - [B2G][Camera] CameraControl API's "zoom" attribute doesn't
+  // scale preview properly
+  //
+  // For some reason, the above calculation for `maxHardwareZoom` does not
+  // work properly on Nexus 4 devices.
+  var hardware = navigator.mozSettings.createLock().get('deviceinfo.hardware');
+  var self = this;
+  hardware.onsuccess = function(evt) {
+    var device = evt.target.result['deviceinfo.hardware'];
+    if (device === 'mako') {
+      
+      // Nexus 4 needs zoom preview adjustment since the viewfinder preview
+      // stream does not automatically reflect the current zoom value.
+      self.settings.zoom.set('useZoomPreviewAdjustment', true);
+
+      if (self.camera.selectedCamera === 'front') {
+        self.camera.set('maxHardwareZoom', 1);
+      } else {
+        self.camera.set('maxHardwareZoom', 1.25);
+      }
+
+      self.camera.emit('zoomconfigured');
+    }
+  };
 
   debug('camera configured with final settings');
 };
@@ -142,6 +149,24 @@ CameraController.prototype.onSettingsConfigured = function() {
  */
 CameraController.prototype.onCameraConfigured = function(config) {
   this.app.emit('camera:configured');
+};
+
+/**
+ * Updates camera configuration in
+ * response to pick activity parameters.
+ *
+ * @param  {Object} data
+ * @private
+ */
+CameraController.prototype.onPickActivity = function(data) {
+
+  // This is set so that the video recorder can
+  // automatically stop when video size limit is reached.
+  this.camera.set('maxFileSizeBytes', data.maxFileSizeBytes);
+
+  // Disable camera config caches when in 'pick' activity
+  // to prevent activity specific configuration persisting.
+  this.camera.cacheConfig = false;
 };
 
 /**
@@ -180,15 +205,6 @@ CameraController.prototype.shouldCountdown = function() {
   return timerSet && !timerActive && !recording;
 };
 
-CameraController.prototype.onPictureSizeChange = function() {
-  var value = this.settings.pictureSizes.selected('data');
-  this.setPictureSize(value);
-};
-
-CameraController.prototype.onRecorderProfileChange = function(key) {
-  this.setRecorderProfile(key);
-};
-
 CameraController.prototype.onFileSizeLimitReached = function() {
   this.camera.stopRecording();
   this.showSizeLimitAlert();
@@ -200,35 +216,62 @@ CameraController.prototype.showSizeLimitAlert = function() {
   var alertText = this.activity.pick ?
     'activity-size-limit-reached' :
     'storage-size-limit-reached';
-  alert(this.localize(alertText));
+  alert(this.l10nGet(alertText));
   this.sizeLimitAlertActive = false;
 };
 
 CameraController.prototype.setMode = function(mode) {
+  var self = this;
   this.setFlashMode();
-  this.camera.setMode(mode);
-  this.viewfinder.fadeOut(this.camera.configure);
+  this.viewfinder.fadeOut(function() {
+    self.camera.setMode(mode);
+  });
 };
 
-CameraController.prototype.setPictureSize = function(value) {
+CameraController.prototype.updatePictureSize = function() {
   var pictureMode = this.settings.mode.selected('key') === 'picture';
+  var value = this.settings.pictureSizes.selected('data');
+  var self = this;
 
   // Only configure in video mode
-  this.camera.setPictureSize(value);
-  if (pictureMode) { this.viewfinder.fadeOut(this.camera.configure); }
+  if (!pictureMode) {
+    this.camera.setPictureSize(value, { configure: false });
+    return;
+  }
+
+  // Fade out, then configure
+  this.viewfinder.fadeOut(function() {
+    self.camera.setPictureSize(value);
+  });
 };
 
-CameraController.prototype.setRecorderProfile = function(value) {
+CameraController.prototype.updateRecorderProfile = function() {
   var videoMode = this.settings.mode.selected('key') === 'video';
+  var key = this.settings.recorderProfiles.selected('key');
+  var self = this;
 
-  // Only configure in video mode
-  this.camera.setRecorderProfile(value);
-  if (videoMode) { this.viewfinder.fadeOut(this.camera.configure); }
+  // Only configure in picture mode
+  if (!videoMode) {
+    this.camera.setRecorderProfile(key, { configure: false });
+    return;
+  }
+
+  // Fade out, then change the setting
+  this.viewfinder.fadeOut(function() {
+    self.camera.setRecorderProfile(key);
+  });
 };
 
-CameraController.prototype.setCamera = function(value) {
-  this.camera.set('selectedCamera', value);
-  this.viewfinder.fadeOut(this.camera.load);
+/**
+ * Set the 'selected' camera.
+ *
+ * @param {String} camera 'front'|'back'
+ */
+CameraController.prototype.setCamera = function(camera) {
+  var self = this;
+  this.viewfinder.fadeOut(function() {
+    self.camera.setCamera(camera);
+  });
 };
 
 CameraController.prototype.setFlashMode = function() {
@@ -237,11 +280,10 @@ CameraController.prototype.setFlashMode = function() {
 };
 
 CameraController.prototype.onHidden = function() {
+  debug('app hidden');
   this.camera.stopRecording();
-  this.camera.set('previewActive', false);
   this.camera.set('focus', 'none');
   this.camera.release();
-  debug('torn down');
 };
 
 CameraController.prototype.setISO = function() {
@@ -256,9 +298,9 @@ CameraController.prototype.setWhiteBalance = function() {
   }
 };
 
-CameraController.prototype.setHDR = function(hdr) {
+CameraController.prototype.setHDR = function() {
   if (this.hdrDisabled) { return; }
-  this.camera.setHDR(hdr);
+  this.camera.setHDR(this.settings.hdr.selected('key'));
 };
 
 CameraController.prototype.onFlashModeChange = function(flashModes) {
@@ -299,6 +341,13 @@ CameraController.prototype.onStorageChanged = function(state) {
  */
 CameraController.prototype.onPreviewGalleryOpened = function() {
   this.camera.configureZoom(this.camera.previewSize());
+};
+
+/**
+ * Updates focus area when the user clicks on the viewfinder
+ */
+CameraController.prototype.onFocusPointChanged = function(focusPoint) {
+  this.camera.updateFocusArea(focusPoint.area);
 };
 
 });

@@ -52,7 +52,9 @@ marionette('Rocketbar', function() {
     });
   });
 
-  test('Navigate to URL', function() {
+  // Skip test as it conflicts with master behaviour
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1009855
+  test.skip('Navigate to URL', function() {
     rocketbar.waitForLoad();
     var element = rocketbar.rocketbar;
     var url = server.url('sample.html');
@@ -83,4 +85,23 @@ marionette('Rocketbar', function() {
       return title.displayed();
     });
   });
+
+  test('Cancel Rocketbar with backdrop', function() {
+    rocketbar.waitForLoad();
+
+    // Check that scrim appears
+    rocketbar.focus();
+    var backdrop = rocketbar.backdrop;
+    client.waitFor(function() {
+      return backdrop.displayed();
+    });
+
+    // Check that clicking scrim returns to non-active state
+    backdrop.click();
+    var title = rocketbar.title;
+    client.waitFor(function() {
+      return title.displayed();
+    });
+  });
+
 });

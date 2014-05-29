@@ -25,9 +25,7 @@ var Connectivity = (function(window, document, undefined) {
 
   var initOrder = [
     updateWifi,
-    updateBluetooth,
-    // register blutooth system message handler
-    initSystemMessageHandler
+    updateBluetooth
   ];
 
   // XXX if wifiManager implements addEventListener function
@@ -37,16 +35,16 @@ var Connectivity = (function(window, document, undefined) {
   var wifiStatusChangeListeners = [updateWifi];
   var settings = Settings.mozSettings;
 
-  // Set wifi.enabled so that it mirrors the state of the hardware.
-  // wifi.enabled is not an ordinary user setting because the system
-  // turns it on and off when wifi goes up and down.
-  //
-  settings.createLock().set({'wifi.enabled': wifiManager.enabled});
-
   //
   // Now register callbacks to track the state of the wifi hardware
   //
   if (wifiManager) {
+    // Set wifi.enabled so that it mirrors the state of the hardware.
+    // wifi.enabled is not an ordinary user setting because the system
+    // turns it on and off when wifi goes up and down.
+    //
+    settings.createLock().set({'wifi.enabled': wifiManager.enabled});
+
     wifiManager.onenabled = function() {
       dispatchEvent(new CustomEvent('wifi-enabled'));
       wifiEnabled();
@@ -244,25 +242,6 @@ var Connectivity = (function(window, document, undefined) {
                  { name: paired[0].name, n: length - 1 });
       };
     };
-  }
-
-  function initSystemMessageHandler() {
-    // XXX this is not a good way to interact with bluetooth.js
-    var handlePairingRequest = function(message) {
-      Settings.currentPanel = '#bluetooth';
-      setTimeout(function() {
-        dispatchEvent(new CustomEvent('bluetooth-pairing-request', {
-          detail: message
-        }));
-      }, 1500);
-    };
-
-    // Bind message handler for incoming pairing requests
-    navigator.mozSetMessageHandler('bluetooth-pairing-request',
-      function bt_gotPairingRequestMessage(message) {
-        handlePairingRequest(message);
-      }
-    );
   }
 
   /**

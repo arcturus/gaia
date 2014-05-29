@@ -1,7 +1,7 @@
 'use strict';
 
-const kEdgeIntertia = 150;
-const kEdgeThreshold = 0.2;
+const kEdgeIntertia = 250;
+const kEdgeThreshold = 0.3;
 
 var EdgeSwipeDetector = {
   previous: document.getElementById('left-panel'),
@@ -58,7 +58,8 @@ var EdgeSwipeDetector = {
       case 'mousedown':
       case 'mousemove':
       case 'mouseup':
-        // Preventing gecko reflows
+        // Preventing gecko reflows until
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1005815 lands
         e.preventDefault();
         break;
       case 'touchstart':

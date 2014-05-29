@@ -213,13 +213,14 @@
    */
   AppWindow.prototype.setVisible =
     function aw_setVisible(visible, screenshotIfInvisible) {
-      this.debug('Dump: set visibility -> ', visible);
+      this.debug('set visibility -> ', visible);
+      this.setVisibleForScreenReader(visible);
       if (visible) {
-        this.element.removeAttribute('aria-hidden');
+        // If this window is not the lockscreen, and the screen is locked,
+        // we need to aria-hide the window.
         this._screenshotOverlayState = 'frame';
         this._showFrame();
       } else {
-        this.element.setAttribute('aria-hidden', 'true');
         if (screenshotIfInvisible && !this.isHomescreen) {
           this._screenshotOverlayState = 'screenshot';
           this._showScreenshotOverlay();
@@ -234,6 +235,16 @@
       if (this.frontWindow) {
         this.frontWindow.setVisible(visible, screenshotIfInvisible);
       }
+    };
+
+  /**
+   * Set screen reader visibility.
+   * @type {Boolean} A flag indicating if it should be visible to the screen
+   * reader.
+   */
+  AppWindow.prototype.setVisibleForScreenReader =
+    function aw_setVisibleForScreenReader(visible) {
+      this.element.setAttribute('aria-hidden', !visible);
     };
 
   /**
@@ -455,8 +466,10 @@
      */
     this.publish('willdestroy');
     this.uninstallSubComponents();
-    if (this.element && this.element.parentNode) {
-      this.element.parentNode.removeChild(this.element);
+    if (this.element) {
+      if (this.element.parentNode) {
+        this.element.parentNode.removeChild(this.element);
+      }
       this.element = null;
     }
 
@@ -482,6 +495,7 @@
                 '</div>' +
               '</div>' +
               '<div class="fade-overlay"></div>' +
+              '<div class="touch-blocker"></div>' +
            '</div>';
   };
 
@@ -537,6 +551,9 @@
 
     // Launched as background: set visibility and overlay screenshot.
     if (this.config.stayBackground) {
+      this.setVisible(false, true /* screenshot */);
+    } else if (this.isHomescreen) {
+      // homescreen is launched at background under FTU/lockscreen too.
       this.setVisible(false);
     }
 
@@ -556,6 +573,32 @@
     this.installSubComponents();
     // Pre determine the rotation degree.
     this.determineRotationDegree();
+  };
+
+  /**
+   * Check an appWindow is a regular browsing window, not tied to a particular
+   * application.
+   *
+   * @return {Boolean} is the current instance a browsing window.
+   */
+  AppWindow.prototype.isBrowser = function aw_isbrowser() {
+    return !this.manifestURL;
+  };
+
+  /**
+   * Try to navigate the current frame to a given url if current instance
+   * is a browsing window.
+   * @param {String} url The url to navigate to
+   */
+  AppWindow.prototype.navigate = function aw_isbrowser(url) {
+    if (this.isBrowser()) {
+      // Kill any front window.
+      if (this.frontWindow) {
+        this.frontWindow.kill();
+        this.frontWindow = null;
+      }
+      this.browser.element.src = url;
+    }
   };
 
   /**
@@ -681,7 +724,6 @@
 
   AppWindow.prototype._handle_mozbrowservisibilitychange =
     function aw__handle_mozbrowservisibilitychange(evt) {
-
       var type = evt.detail.visible ? 'foreground' : 'background';
       this.publish(type);
     };
@@ -900,6 +942,8 @@
       setTimeout(callback);
       return;
     }
+
+    this.debug('trying wait for full repaint by screenshot enforcing..');
 
     this.getScreenshot(function() {
       setTimeout(callback);
@@ -1485,7 +1529,7 @@
     }
 
     this.debug('requesting to open');
-    if (!this.loaded) {
+    if (!this.loaded || this._screenshotOverlayState == 'screenshot') {
       this.debug('loaded yet');
       setTimeout(callback);
       return;
@@ -1739,6 +1783,82 @@
         this.setVisible(false, true);
       }
     };
+
+  /**
+   * Make adjustments to display inside the task manager
+   */
+  AppWindow.prototype.enterTaskManager = function aw_enterTaskManager() {
+    this._dirtyStyleProperties = {};
+    if (this.element) {
+      this.element.classList.add('in-task-manager');
+    }
+  };
+
+  /**
+   * Remove adjustments made to display inside the task manager
+   */
+  AppWindow.prototype.leaveTaskManager = function aw_leaveTaskManager() {
+    if (this.element) {
+      this.element.classList.remove('in-task-manager');
+      this.unapplyStyle(this._dirtyStyleProperties);
+      this._dirtyStyleProperties = null;
+    }
+  };
+
+  /**
+   * Apply a transform to the element
+   * @param {Object} nameValues object with transform property names as keys
+   *                            and values to apply to the element
+   * @memberOf AppWindow.prototype
+   */
+  AppWindow.prototype.transform = function(nameValues) {
+    var strFunctions = Object.keys(nameValues).map(function(key) {
+      return key + '(' + nameValues[key] + ')';
+    }, this).join(' ');
+    this.applyStyle({ MozTransform: strFunctions });
+  };
+
+  /**
+   * Batch apply style properties
+   * @param {Object} nameValues object with style property names as keys
+   *                            and values to apply to the element
+   * @memberOf AppWindow.prototype
+   */
+  AppWindow.prototype.applyStyle = function(nameValues) {
+    var dirty = this._dirtyStyleProperties || (this._dirtyStyleProperties = {});
+    var style = this.element.style;
+    for (var property in nameValues) {
+      if (undefined === nameValues[property]) {
+        delete style[[property]];
+      } else {
+        style[property] = nameValues[property];
+      }
+      dirty[property] = true;
+    }
+  };
+
+  /**
+   * Remove inline style properties
+   * @param {Object} nameValues object with style property names as keys
+   * @memberOf AppWindow.prototype
+   */
+  AppWindow.prototype.unapplyStyle = function(nameValues) {
+    var style = this.element.style;
+    for (var pname in nameValues) {
+      style[pname] = '';
+      delete style[pname];
+    }
+  };
+
+  /**
+   * Show the default contextmenu for an AppWindow
+   * @memberOf AppWindow.prototype
+   */
+  AppWindow.prototype.showDefaultContextMenu = function() {
+    if (this.contextmenu) {
+      this.contextmenu.showDefaultMenu();
+    }
+  };
 
   exports.AppWindow = AppWindow;
 }(window));

@@ -26,7 +26,7 @@ function OverlayController(app) {
   bindAll(this);
   this.app = app;
   this.activity = app.activity;
-  this.localize = app.localize;
+  this.l10nGet = app.l10nGet;
   this.batteryOverlay = null;
   this.storageOverlay = null;
   this.bindEvents();
@@ -80,13 +80,11 @@ OverlayController.prototype.onBatteryChanged = function(state) {
 
 OverlayController.prototype.createOverlay = function(type) {
   var data = this.getOverlayData(type);
-  var activity = this.activity;
+  var self = this;
 
-  if (!data) {
-    return;
-  }
+  if (!data) { return; }
 
-  var isClosable = activity.pick;
+  var isClosable = this.activity.pick;
   var overlay = new Overlay({
     type: type,
     closable: isClosable,
@@ -96,7 +94,7 @@ OverlayController.prototype.createOverlay = function(type) {
   overlay
     .appendTo(document.body)
     .on('click:close-btn', function() {
-      activity.cancel();
+      self.app.emit('activitycanceled');
     });
 
   debug('inserted \'%s\' overlay', type);
@@ -115,26 +113,26 @@ OverlayController.prototype.getOverlayData = function(type) {
 
   switch (type) {
     case 'unavailable':
-      data.title = this.localize('nocard2-title');
-      data.body = this.localize('nocard3-text');
+      data.title = this.l10nGet('nocard2-title');
+      data.body = this.l10nGet('nocard3-text');
     break;
     case 'nospace':
-      data.title = this.localize('nospace2-title');
-      data.body = this.localize('nospace2-text');
+      data.title = this.l10nGet('nospace2-title');
+      data.body = this.l10nGet('nospace2-text');
     break;
     case 'shared':
-      data.title = this.localize('pluggedin-title');
-      data.body = this.localize('pluggedin-text');
+      data.title = this.l10nGet('pluggedin2-title');
+      data.body = this.l10nGet('pluggedin2-text');
     break;
     case 'shutdown':
-      data.title = this.localize('battery-shutdown-title');
-      data.body = this.localize('battery-shutdown-text');
+      data.title = this.l10nGet('battery-shutdown-title');
+      data.body = this.l10nGet('battery-shutdown-text');
     break;
     default:
       return false;
   }
 
-  data.closeButtonText = this.localize('close-button');
+  data.closeButtonText = this.l10nGet('close-button');
 
   return data;
 };

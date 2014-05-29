@@ -20,8 +20,7 @@ class TestFtu(GaiaTestCase):
         self.ftu.launch()
 
         # If mozWifiManager is not initialised an exception may be thrown
-        Wait(self.marionette, ignored_exceptions=JavascriptException).until(
-            lambda m: self.data_layer.is_wifi_enabled)
+        Wait(self.marionette).until(lambda m: self.data_layer.is_wifi_enabled)
 
     def test_ftu_skip_tour(self):
         """https://moztrap.mozilla.org/manage/case/3876/
@@ -32,7 +31,7 @@ class TestFtu(GaiaTestCase):
         psk = self.testvars['wifi'].get('psk')
         keymanagement = self.testvars['wifi'].get('keyManagement')
 
-        self.assertGreater(self.ftu.languages_list, 0, "No languages listed on screen")
+        self.wait_for_condition(lambda m: self.ftu.languages_list > 0, message="No languages listed on screen")
 
         # select en-US due to the condition of this test is only for en-US
         self.ftu.tap_language("en-US")

@@ -40,6 +40,18 @@ exports.getEnvPath = function() {
 exports.processEvents = function() {
 };
 
+var mockNSIFile = function() {
+  return {
+    clone: mockNSIFile,
+    remove: function() {},
+    append: function() {}
+  };
+};
+
+exports.getTempFolder = function() {
+  return mockNSIFile();
+};
+
 exports.getJSON = function() {
 };
 
@@ -57,4 +69,15 @@ exports.getExtension = function(filename) {
 exports.isSubjectToBranding = function(path) {
   return /shared[\/\\][a-zA-Z]+[\/\\]branding$/.test(path) ||
          /branding[\/\\]initlogo.png/.test(path);
+};
+
+exports.existsInAppDirs =  function(appDirs, appName) {
+  var apps = appDirs.split(' ');
+  var exists = apps.some(function (appPath) {
+    let appFile = {
+      leafName: appPath
+    };
+    return (appName === appFile.leafName);
+  });
+  return exists;
 };

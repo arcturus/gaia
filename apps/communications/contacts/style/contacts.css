@@ -1,3 +1,5 @@
+@import url("root.css");
+
 /* Contact detail header */
 .contact-header {
   margin: -1.4rem -2rem 1rem;
@@ -27,11 +29,6 @@ section[role="region"] > header:first-child .icon.icon-edit-contact {
 
 .view-contacts-list .view-body-inner {
   padding-left: 0;
-}
-
-#contact-name-title {
-  max-width: 22rem;
-  float: left;
 }
 
 /* Contact detail main section */
@@ -142,20 +139,6 @@ section[role="region"] > header:first-child .icon.icon-edit-contact {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-#contact-detail li button.icon-call {
-  padding-left: 0;
-}
-
-#contact-detail li button>div {
-  display: inline-flex;
-  width: calc(100% - 1.5rem);
-  margin-left: 1.5rem;
-}
-
-#contact-detail li button>div b {
-  flex: 1;
 }
 
 #contact-detail .social-actions button {
@@ -382,6 +365,10 @@ form p textarea + button[type="reset"].hide {
 
 section[role="region"] > header .icon.icon-settings {
   background-image: url(/contacts/style/gphx/bitmap/default/vw-header/icons/settings.png);
+}
+
+#view-settings {
+  z-index: 101;
 }
 
 #view-settings .view-body-inner {
@@ -660,7 +647,11 @@ section[role="region"] > header .icon.icon-settings {
 }
 
 .remark {
-  color: #ff4e00;
+  color: #339999;
+}
+
+.remark-missed {
+  color: #CC0000;
 }
 
 .valueselector {
@@ -728,4 +719,25 @@ section[role="region"] > header .icon.icon-settings {
 .hidden-input {
   /* visibility: hidden; will avoid events to reach the <input> */
   opacity: 0;
+}
+
+form[role="dialog"][data-type="edit"] header {
+  transform: translateY(-5rem);
+}
+
+form[role="dialog"][data-type="edit"] > menu {
+  transform: translateY(110%);
+}
+
+form[role="dialog"][data-type="edit"].contacts-select.in-edit-mode header,
+form[role="dialog"][data-type="edit"].contacts-select.in-edit-mode > menu {
+  transition: 0s;
+}
+
+form[role="dialog"][data-type="edit"].contacts-select:not(.insearchmode) > menu {
+  transform: translateY(0);
+}
+
+form[role="dialog"][data-type="edit"].contacts-select:not(.insearchmode) header {
+  transform: translateY(0);
 }

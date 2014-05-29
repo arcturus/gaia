@@ -40,12 +40,16 @@ var TonePlayer = {
       return;
     }
 
-    this._audioContext = new AudioContext();
+    this._audioContext = new AudioContext(this._channel);
   },
 
   trashAudio: function tp_trashAudio() {
     this.stop();
+    if (this._channel === 'telephony' && this._audioContext) {
+      this._audioContext.mozAudioChannelType = 'normal';
+    }
     this._audioContext = null;
+    this._channel = null;
   },
 
   /**
@@ -231,10 +235,14 @@ var TonePlayer = {
     }).bind(this));
   },
 
+  _channel: null,
   setChannel: function tp_setChannel(channel) {
-    this.ensureAudio();
-    if (channel && (this._audioContext.mozAudioChannelType !== channel)) {
-      this._audioContext.mozAudioChannelType = channel;
+    if (!channel || this._channel === channel) {
+      return;
     }
+
+    this.trashAudio();
+    this._channel = channel;
+    this.ensureAudio();
   }
 };

@@ -54,9 +54,6 @@ var Browser = {
 
   init: function browser_init() {
     this.getAllElements();
-    if (window.navigator.mozNfc) {
-      window.navigator.mozNfc.onpeerready = NfcURI.handlePeerConnectivity;
-    }
     // Add event listeners
     this.urlBar.addEventListener('submit', this.handleUrlFormSubmit.bind(this));
     this.urlInput.addEventListener('focus', this.urlFocus.bind(this));
@@ -130,15 +127,15 @@ var Browser = {
     var filesToLoad = [
       // css files
       'shared/style/headers.css',
-      'shared/style_unstable/buttons.css',
-      'shared/style_unstable/input_areas.css',
+      'shared/style/buttons.css',
+      'shared/style/input_areas.css',
       'shared/style/status.css',
       'shared/style/confirm.css',
+      'shared/style/action_menu.css',
       'style/modal_dialog/modal_dialog.css',
       'style/modal_dialog/prompt.css',
       'style/themes/default/core.css',
       'style/themes/default/buttons.css',
-      'style/action_menu.css',
       'style/authentication_dialog.css',
       'style/settings.css',
       'style/awesomescreen.css',
@@ -594,10 +591,6 @@ var Browser = {
     AuthenticationDialog.clear(tab.id);
     this.frames.removeChild(tab.dom);
     delete tab.dom;
-    delete tab.screenshot;
-    if (this.currentScreen === this.TABS_SCREEN) {
-      this.showTabScreen();
-    }
   },
 
   handleVisibilityChange: function browser_handleVisibilityChange() {
@@ -771,33 +764,33 @@ var Browser = {
         if (bookmark) {
           if (from && from === 'bookmarksTab') { //show actions in bookmark tab
 
-            this.bookmarkMenuAdd.parentNode.classList.add('hidden');
+            this.bookmarkMenuAdd.classList.add('hidden');
             //append url to button's dataset
             this.bookmarkMenuRemove.dataset.url = url;
-            this.bookmarkMenuRemove.parentNode.classList.remove('hidden');
+            this.bookmarkMenuRemove.classList.remove('hidden');
             //XXX not implement yet: edit bookmark in bookmarktab #838041
-            this.bookmarkMenuEdit.parentNode.classList.add('hidden');
+            this.bookmarkMenuEdit.classList.add('hidden');
             //XXX not implement yet: link to home in bookmarktab #850999
-            this.bookmarkMenuAddHome.parentNode.classList.add('hidden');
+            this.bookmarkMenuAddHome.classList.add('hidden');
 
           } else { //show actions in browser page
 
-            this.bookmarkMenuAdd.parentNode.classList.add('hidden');
+            this.bookmarkMenuAdd.classList.add('hidden');
             this.bookmarkMenuRemove.dataset.url = url;
-            this.bookmarkMenuRemove.parentNode.classList.remove('hidden');
+            this.bookmarkMenuRemove.classList.remove('hidden');
             this.bookmarkMenuEdit.dataset.url = url;
-            this.bookmarkMenuEdit.parentNode.classList.remove('hidden');
+            this.bookmarkMenuEdit.classList.remove('hidden');
             //XXX not implement yet: link to home in bookmarktab #850999
-            this.bookmarkMenuAddHome.parentNode.classList.remove('hidden');
+            this.bookmarkMenuAddHome.classList.remove('hidden');
 
           }
         } else { //show actions in browser page
 
-          this.bookmarkMenuAdd.parentNode.classList.remove('hidden');
-          this.bookmarkMenuRemove.parentNode.classList.add('hidden');
-          this.bookmarkMenuEdit.parentNode.classList.add('hidden');
+          this.bookmarkMenuAdd.classList.remove('hidden');
+          this.bookmarkMenuRemove.classList.add('hidden');
+          this.bookmarkMenuEdit.classList.add('hidden');
           //XXX not implement yet: link to home in bookmarktab #850999
-          this.bookmarkMenuAddHome.parentNode.classList.remove('hidden');
+          this.bookmarkMenuAddHome.classList.remove('hidden');
 
         }
       }).bind(this));
@@ -898,7 +891,8 @@ var Browser = {
     if (this.shouldFocus) {
       e.preventDefault();
       this.urlInput.focus();
-      this.urlInput.select();
+      this.urlInput.setSelectionRange(0, this.urlInput.value.length);
+      this.urlInput.scrollLeft = this.urlInput.scrollWidth;
       this.shouldFocus = false;
     }
   },
@@ -920,6 +914,7 @@ var Browser = {
   },
 
   urlBlur: function browser_urlBlur() {
+    this.urlInput.scrollLeft = 0;
     this.urlBar.classList.remove('focus');
   },
 
@@ -1364,6 +1359,7 @@ var Browser = {
       this.loadRemaining();
     }.bind(this));
     Toolbar.bookmarkButton.classList.remove('bookmarked');
+    NfcURI.stopListening();
   },
 
   _topSiteThumbnailObjectURLs: [],
@@ -1382,6 +1378,7 @@ var Browser = {
     document.body.classList.remove('start-page');
     this.startscreen.classList.add('hidden');
     this.clearTopSiteThumbnails();
+    NfcURI.startListening();
   },
 
   showTopSiteThumbnails: function browser_showStartscreenThumbnails(places) {
@@ -1504,9 +1501,7 @@ var Browser = {
     a.appendChild(span);
     li.appendChild(a);
 
-    if (tab.crashed) {
-      preview.classList.add('crashed');
-    } else if (tab.screenshot) {
+    if (tab.screenshot) {
       var objectURL = URL.createObjectURL(tab.screenshot);
       this._tabScreenObjectURLs.push(objectURL);
       preview.style.backgroundImage = 'url(' + objectURL + ')';

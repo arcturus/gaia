@@ -3,39 +3,41 @@ define(function(require) {
 
 var timing = window.performance.timing;
 var domLoaded = timing.domComplete - timing.domLoading;
-var debug = require('debug')('main');
-debug('domloaded in %s', domLoaded + 'ms');
+console.log('domloaded in %s', domLoaded + 'ms');
 
 /**
  * Module Dependencies
  */
 
-var Activity = require('lib/activity');
 var Settings = require('lib/settings');
 var GeoLocation = require('lib/geo-location');
-var settings = new Settings(require('config/settings'));
-var Camera = require('lib/camera');
+var settingsData = require('config/config');
+var settings = new Settings(settingsData);
+var Camera = require('lib/camera/camera');
 var App = require('app');
+
+/**
+  * Create globals specified in the config file
+  */
+if (settingsData.globals) {
+  for (var key in settingsData.globals) {
+    window[key] = settingsData.globals[key];
+  }
+}
 
 /**
  * Create new `App`
  */
-
 var app = window.app = new App({
   settings: settings,
   geolocation: new GeoLocation(),
-  activity: new Activity(),
 
   el: document.body,
   doc: document,
   win: window,
 
   camera: new Camera({
-    maxFileSizeBytes: 0,
-    maxWidth: 0,
-    maxHeight: 0,
-    cacheConfig: true,
-    cafEnabled: settings.caf.enabled()
+    focus: settingsData.focus
   }),
 
   controllers: {
@@ -47,7 +49,6 @@ var app = window.app = new App({
     settings: require('controllers/settings'),
     activity: require('controllers/activity'),
     camera: require('controllers/camera'),
-    timer: require('controllers/timer'),
     zoomBar: require('controllers/zoom-bar'),
     indicators: require('controllers/indicators'),
 
@@ -56,13 +57,15 @@ var app = window.app = new App({
     storage: 'controllers/storage',
     confirm: 'controllers/confirm',
     battery: 'controllers/battery',
-    sounds: 'controllers/sounds'
+    sounds: 'controllers/sounds',
+    timer: 'controllers/timer',
   }
 });
 
 // Fetch persistent settings,
 // Check for activities, then boot
+app.camera.load();
 app.settings.fetch();
-app.activity.check(app.boot);
+app.boot();
 
 });
