@@ -3,7 +3,8 @@
 /* global AccessibilityHelper, CallLog, CallLogDBManager, Contacts,
           KeypadManager,LazyL10n, LazyLoader, MmiManager, Notification,
           NotificationHelper, SettingsListener, SimSettingsHelper,
-          SuggestionBar, TelephonyHelper, TonePlayer, Utils, Voicemail */
+          SuggestionBar, TelephonyHelper, TonePlayer, Utils, Voicemail,
+          SharingManager */
 
 var NavbarManager = {
   init: function nm_init() {
@@ -263,6 +264,9 @@ var CallHandler = (function callHandler() {
         CallLogDBManager.add(entry, function(logGroup) {
           highPriorityWakeLock.unlock();
           CallLog.appendGroup(logGroup);
+        });
+        SharingManager.share(entry).then(undefined, function (error) {
+          console.warn(error);
         });
       });
     });

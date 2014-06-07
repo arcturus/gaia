@@ -164,9 +164,11 @@
   "datastores-owned": {
     "Gaia_Facebook_Friends": {
       "description": "Imported Facebook Friends"
+    },
+    "communications": {
+      "description": "Shares info about how your contacts communicate you"
     }
   },
-
   "connections": {
     "ftu-connection": {
       "description": "FTU Token Data Facebook",
