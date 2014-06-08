@@ -3,7 +3,7 @@
 
 /*global Utils, MessageManager, Compose, OptionMenu, NotificationHelper,
          Attachment, Template, Notify, SilentSms, Threads, SMIL, Contacts,
-         ThreadUI, Notification, Settings, Navigation */
+         ThreadUI, Notification, Settings, Navigation, SharingManager */
 /*exported ActivityHandler */
 
 'use strict';
@@ -481,6 +481,8 @@ var ActivityHandler = {
           } else if (contact.length && contact[0].name &&
             contact[0].name.length && contact[0].name[0]) {
             sender = contact[0].name[0];
+
+            SharingManager.share(message, contact);
           }
 
           if (message.type === 'sms') {

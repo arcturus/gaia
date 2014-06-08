@@ -173,6 +173,10 @@
     "communications": {
       "readonly": false,
       "description": "Access to communications activities"
+    },
+    "messaging": {
+      "readonly": true,
+      "description": "Access to messaging activities"
     }
   },
   "connections": {

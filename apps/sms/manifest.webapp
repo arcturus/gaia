@@ -88,5 +88,10 @@
     "Gaia_Facebook_Friends": {
       "description": "Facebook Friends"
     }
+  },
+  "datastores-owned": {
+    "messaging": {
+      "description": "Shares info about which contact messages you"
+    }
   }
 }
