@@ -719,3 +719,13 @@ form[role="dialog"][data-type="edit"].contacts-select:not(.insearchmode) > menu 
 form[role="dialog"][data-type="edit"].contacts-select:not(.insearchmode) header {
   transform: translateY(0);
 }
+
+[data-type="communications"] h3 {
+  float: left;
+  font-size: 2rem;
+}
+
+[data-type="communications"] sub {
+  font-size: 1.2rem;
+  float: right;
+}

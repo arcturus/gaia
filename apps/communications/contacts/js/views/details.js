@@ -1,6 +1,7 @@
 'use strict';
 /* jshint nonew: false */
 /* global ActivityHandler */
+/* global ActivityLog */
 /* global COMMS_APP_ORIGIN */
 /* global Contacts */
 /* global ContactPhotoHelper */
@@ -15,6 +16,8 @@
 /* global WebrtcClient */
 /* global utils */
 /* global TAG_OPTIONS */
+
+/*jshint -W098 */
 
 var contacts = window.contacts || {};
 
@@ -46,6 +49,7 @@ contacts.Details = (function() {
       detailsInner,
       dom,
       currentSocial,
+      activityTemplate,
       _;
 
   var socialButtonIds = [
@@ -72,6 +76,7 @@ contacts.Details = (function() {
     detailsInner = dom.querySelector('#contact-detail-inner');
     favoriteMessage = dom.querySelector('#toggle-favorite');
     notesTemplate = dom.querySelector('#note-details-template-\\#i\\#');
+    activityTemplate = dom.querySelector('#activity-log');
 
     window.addEventListener('online', checkOnline);
     window.addEventListener('offline', checkOnline);
@@ -107,7 +112,7 @@ contacts.Details = (function() {
     if (WebrtcClient) {
       getWebrtcClientResources(WebrtcClient.stop);
     }
-    
+
     if (ActivityHandler.currentlyHandling) {
       ActivityHandler.postCancel();
       Contacts.navigation.home();
@@ -246,28 +251,39 @@ contacts.Details = (function() {
     contactDetails.classList.remove('up');
     utils.dom.removeChildNodes(listContainer);
 
-    renderFavorite(contact);
-    renderOrg(contact);
-
+    // renderFavorite(contact);
+    // renderOrg(contact);
+    //
     renderPhones(contact);
     renderEmails(contact);
-    
+
+    renderActivityLog(contactData);
     renderWebrtcClient(contactData);// Don't share the FB info
-    
-    renderAddresses(contact);
 
-    renderDates(contact);
-
-    renderNotes(contact);
-    if (fb.isEnabled) {
-      renderSocial(contact);
-    }
-
-    if (!fb.isFbContact(contact) || fb.isFbLinked(contact)) {
-      renderDuplicate(contact);
-    }
+    // renderAddresses(contact);
+    //
+    // renderDates(contact);
+    //
+    // renderNotes(contact);
+    // if (fb.isEnabled) {
+    //   renderSocial(contact);
+    // }
+    //
+    // if (!fb.isFbContact(contact) || fb.isFbLinked(contact)) {
+    //   renderDuplicate(contact);
+    // }
 
     renderPhoto(contact);
+  };
+
+  var renderActivityLog = function cd_renderSharedInfo(contact) {
+    ActivityLog.init(activityTemplate, listContainer).then(function () {
+      ActivityLog.render(contact.id).then(undefined, function (e) {
+        console.warn('Could not render activity time line: ' + e);
+      });
+    }, function (e) {
+      console.warn('Could not initialise activity log: ' + e);
+    });
   };
 
   var renderFavorite = function cd_renderFavorite(contact) {

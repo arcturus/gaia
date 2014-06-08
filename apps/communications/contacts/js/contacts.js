@@ -576,7 +576,8 @@ var Contacts = (function() {
     } else {
       Contacts.view('Details', function viewLoaded() {
         var simPickerNode = document.getElementById('sim-picker');
-        LazyLoader.load([simPickerNode], function() {
+        LazyLoader.load([simPickerNode,
+           '/contacts/js/activity_log.js'], function() {
           navigator.mozL10n.translate(simPickerNode);
           detailsReady = true;
           contactsDetails = contacts.Details;

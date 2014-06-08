@@ -169,6 +169,12 @@
       "description": "Shares info about how your contacts communicate you"
     }
   },
+  "datastores-access": {
+    "communications": {
+      "readonly": false,
+      "description": "Access to communications activities"
+    }
+  },
   "connections": {
     "ftu-connection": {
       "description": "FTU Token Data Facebook",
