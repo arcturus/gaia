@@ -16,7 +16,7 @@ var ActivityLog = (function ActivityLog(){
   }
 
   // Kind of info (aka name of ds) to consume
-  var storeTypes = ['communications'];
+  var storeTypes = ['communications', 'messaging'];
 
   // Stores a reference of the datastores in the system for type
   // of known datastore (storeTypes)
@@ -77,9 +77,9 @@ var ActivityLog = (function ActivityLog(){
     timeLine = flattenArray(timeLines);
 
     timeLine.sort(function (a, b) {
-      if (a.date < b.date) {
+      if (a.date > b.date) {
         return -1;
-      } else if (a.date > b.date) {
+      } else if (a.date < b.date) {
         return 1;
       }
       return 0;
@@ -154,7 +154,7 @@ var ActivityLog = (function ActivityLog(){
   //   <h2 id="activity-label">Activity</h2>
   //   <div class="item" data-template="comms-#i#" data-type="communications">
   //     <span></span>
-  //     <div>
+  //     <div class="activity">
   //       <h3>#title#</h3>
   //       <sub>#subtitle#</sub>
   //     </div>
@@ -199,6 +199,22 @@ var ActivityLog = (function ActivityLog(){
     });
   }
 
+  // Specific renderer for messaging entries type
+  //   <div class="item" data-template="messaging-#i#" data-type="messaging">
+  //     <span></span>
+  //     <div class="activity">
+  //       <h3>#title#</h3>
+  //       <sub>#subtitle#</sub>
+  //     </div>
+  //   </div>
+  function messagingRenderer(activity, tmpl, count) {
+    return utils.templates.render(tmpl, {
+      i: count,
+      title: 'Type of message ' + activity.type + ' | ' + activity.subtype,
+      subtitle: new Date(activity.date)
+    });
+  }
+
   // Tuple with renderer name and templae
   // {
   //    'renderer': fn,
@@ -207,6 +223,9 @@ var ActivityLog = (function ActivityLog(){
   var typesTemplates = {
     'communications': {
       'renderer': communicationsRenderer
+    },
+    'messaging': {
+      'renderer': messagingRenderer
     }
   };
 
