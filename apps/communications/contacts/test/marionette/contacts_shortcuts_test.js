@@ -31,9 +31,9 @@ marionette('Contacts shortcuts > touch', function() {
   });
 
   // Disabled bug 1023908
-  suite.skip('touch on shortcuts', function() {
+  suite('touch on shortcuts', function() {
     test('press/release on scrollbar should show/hide shortcut', function() {
-      var action = actions.press(scrollbar, 10, 200).perform();
+      var action = actions.press(scrollbar, 10, 100).perform();
       overlay = client.helper.waitForElement(selectors.overlay);
       assert.equal(overlay.text().length, 1);
       assert.equal(overlayOpacity(), '1');
@@ -69,7 +69,7 @@ marionette('Contacts shortcuts > touch', function() {
       function() {
       actions.press(scrollbar, 10, 200).release().perform();
 
-      var action = actions.press(scrollbar, 10, 200).perform();
+      var action = actions.press(scrollbar, 10, 100).perform();
       overlay = client.helper.waitForElement(selectors.overlay);
       assert.equal(overlay.text().length, 1);
       action.release().perform();
