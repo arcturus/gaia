@@ -251,6 +251,7 @@ contacts.Details = (function() {
     contactDetails.classList.remove('up');
     utils.dom.removeChildNodes(listContainer);
 
+
     // renderFavorite(contact);
     // renderOrg(contact);
     //

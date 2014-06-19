@@ -720,6 +720,10 @@ form[role="dialog"][data-type="edit"].contacts-select:not(.insearchmode) header 
   transform: translateY(0);
 }
 
+.activity > div {
+  padding-bottom: 10px;
+}
+
 .activity h3 {
   float: left;
   font-size: 2rem;
@@ -728,4 +732,10 @@ form[role="dialog"][data-type="edit"].contacts-select:not(.insearchmode) header 
 .activity sub {
   font-size: 1.2rem;
   float: right;
+}
+
+.activity span > img {
+  width: 43px;
+  height: 43px;
+  float: left;
 }

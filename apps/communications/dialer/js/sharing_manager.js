@@ -39,7 +39,50 @@ var SharingManager = {
     var l10nIds = ['voice_call_dialing', 'voice_call_incoming'];
     resources.l10n = L10nManipulator.getAST(l10nIds);
 
-    return store.put(resources, self.METADATA_FIELD);
+    var self = this;
+    return new Promise(function (resolve, reject) {
+      self._getImages().then(function (images) {
+        resources.images = images;
+        store.put(resources, self.METADATA_FIELD).then(resolve, reject);
+      }, reject);
+    });
+  },
+  _getImages: function () {
+    //From: http://goo.gl/ul5z6
+    function getBase64Image(img) {
+      // Create an empty canvas element
+      var canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      // Copy the image contents to the canvas
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      // Get the data-URL formatted image
+      // Firefox supports PNG and JPEG. You could check img.src to
+      // guess the original format, but be aware the using "image/jpg"
+      // will re-encode the image.
+      return canvas.toDataURL('image/png');
+    }
+    return new Promise(function (resolve, reject) {
+      var request = navigator.mozApps.getSelf();
+      request.onsuccess = function onApp(evt) {
+        var app = evt.target.result;
+        var icons = app.manifest.entry_points.dialer.icons;
+        var iconUrl = app.installOrigin + icons['84'];
+        var img = new Image();
+        img.src = iconUrl;
+        img.onload = function () {
+          var images = {
+            'icon': getBase64Image(img)
+          };
+          resolve(images);
+        };
+        img.onerror = reject;
+      };
+      request.onerror = reject;
+    });
   },
   _getContact: function (number) {
     return new Promise(function (resolve, reject) {

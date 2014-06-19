@@ -1,5 +1,5 @@
 'use strict';
-/* global Promise, utils */
+/* global Promise, utils, L10nManipulator */
 /* exported ActivityLog */
 
 var ActivityLog = (function ActivityLog(){
@@ -7,7 +7,9 @@ var ActivityLog = (function ActivityLog(){
   var template;
   var target;
   var datastores = {};
+  var resources = {};
   var initialized = false;
+  var _ = navigator.mozL10n.get;
 
   function flattenArray(array) {
     return array.reduce(function(a, b) {
@@ -24,7 +26,12 @@ var ActivityLog = (function ActivityLog(){
     return new Promise(function (resolve, reject) {
       navigator.getDataStores(type).then(function (stores) {
         datastores[type] = stores;
-        resolve();
+        // Load resources
+        var resPromises = [];
+        stores.forEach(function (store) {
+          resPromises.push(fetchExternalResources(store));
+        });
+        Promise.all(resPromises).then(resolve, reject);
       }, reject);
     });
   }
@@ -45,14 +52,24 @@ var ActivityLog = (function ActivityLog(){
 
       var promises = [];
       stores.forEach(function (store) {
-        promises.push(store.get(id));
+        promises.push(new Promise(function (rslv, rjct) {
+          store.get(id).then(function(value) {
+            if (value) {
+              value.map(function (elem) {
+                elem.activityType = type;
+                elem.owner = store.owner;
+              });
+            }
+            rslv(value);
+          }, rjct);
+        }));
       });
 
       Promise.all(promises).then(function (activities) {
         var result = flattenArray(activities);
-        result.map(function (elem) {
-          elem.activityType = type;
-        });
+        if (!result) {
+          result = [];
+        }
         resolve(result);
       }, reject);
     });
@@ -94,6 +111,26 @@ var ActivityLog = (function ActivityLog(){
     return activityLookup(id).then(createTimeLine);
   }
 
+  // Look for a key 'resources' for this datastore
+  // and load external resources.
+  function fetchExternalResources(ds) {
+    return new Promise(function (resolve, reject) {
+      ds.get('metadata').then(function (res) {
+        if (!res) {
+          resolve();
+          return;
+        }
+
+        if (res.l10n) {
+          L10nManipulator.addAST(res.l10n);
+        }
+
+        resources[ds.owner] = res;
+        resolve();
+      }, reject);
+    });
+  }
+
   /*
     Given a template to use as render point, get a reference to all
     DS needed if wasn't previously initialized.
@@ -107,7 +144,7 @@ var ActivityLog = (function ActivityLog(){
 
     // Fetch the subtemplates and check if we have renderers
     storeTypes.forEach(function (type) {
-      var subTemplate = template.querySelector('[data-type="' + type + '"]');
+      var subTemplate = template.querySelector('#' + type + '-\\#i\\#');
       if (!subTemplate) {
         return;
       }
@@ -117,6 +154,7 @@ var ActivityLog = (function ActivityLog(){
         typesTemplates[type].template = subTemplate;
       }
     });
+    template.innerHTML = '';
 
     if (initialized) {
       return Promise.resolve();
@@ -145,6 +183,8 @@ var ActivityLog = (function ActivityLog(){
       findContactActivity(contactId).then(function (activity) {
         if (activity && Array.isArray(activity) && activity.length > 0) {
           doRender(activity);
+        } else {
+          reject();
         }
       }, reject);
     });
@@ -185,16 +225,25 @@ var ActivityLog = (function ActivityLog(){
 
   // Specific renderer for communication entries type
   //   <div class="item" data-template="comms-#i#" data-type="communications">
-  //     <span></span>
+  //     <span><img src="#icon#"></img></span>
   //     <div>
   //       <h3>#title#</h3>
   //       <sub>#subtitle#</sub>
   //     </div>
   //   </div>
   function communicationsRenderer(activity, tmpl, count) {
+    var str = _(activity.type + '_' + activity.subtype);
+    var icon = '';
+    if (resources[activity.owner]) {
+      var res = resources[activity.owner];
+      if (res.images && res.images.icon) {
+        icon = res.images.icon;
+      }
+    }
     return utils.templates.render(tmpl, {
       i: count,
-      title: 'Type of call ' + activity.type + ' | ' + activity.subtype,
+      icon: icon,
+      title: str,
       subtitle: new Date(activity.date)
     });
   }
