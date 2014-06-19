@@ -1,11 +1,46 @@
 'use strict';
-/* globals Contacts, Promise */
+/* globals Contacts, Promise, L10nManipulator */
 /* exported SharingManager */
 
 var SharingManager = {
   ORIGIN: 'app://communications.gaiamobile.org/manifest.webapp',
   STORE_NAME: 'communications',
+  METADATA_FIELD: 'metadata',
   store: null,
+  // Check if we need to include meta data for this app or
+  // it's already included. No matter if fail, we always
+  // pass through this silently
+  _initialise: function (store) {
+    var self = this;
+    return new Promise(function (resolve, reject) {
+      function alwaysResolve() {
+        resolve(store);
+      }
+
+      store.get(self.METADATA_FIELD).then(function (entry) {
+        if (entry) {
+          alwaysResolve();
+        } else {
+          self._populateMetadata(store).then(alwaysResolve, alwaysResolve);
+        }
+      }, function () {
+        self._populateMetadata(store).then(alwaysResolve, alwaysResolve);
+      });
+    });
+  },
+  _populateMetadata: function (store) {
+    var resources = {
+      images: null,
+      l10n: []
+    };
+    // Add locale
+    // voice_call_dialing -> outgoing calls
+    // voice_call_incoming -> incoming calls
+    var l10nIds = ['voice_call_dialing', 'voice_call_incoming'];
+    resources.l10n = L10nManipulator.getAST(l10nIds);
+
+    return store.put(resources, self.METADATA_FIELD);
+  },
   _getContact: function (number) {
     return new Promise(function (resolve, reject) {
       Contacts.findByNumber(number, function (contact, matchingTel) {
@@ -38,7 +73,8 @@ var SharingManager = {
         stores.forEach(function (store) {
           if (store.owner === self.ORIGIN) {
             self.store = store;
-            resolve(store);
+            self._initialise(store).then(resolve, resolve);
+            //resolve(store);
             return;
           }
         });
@@ -51,7 +87,7 @@ var SharingManager = {
     var record = {
       date: clEntry.date,
       type: 'voice_call',
-      subtype: clEntry.status,
+      subtype: clEntry.type,
       contact_id: contact.id
     };
 
