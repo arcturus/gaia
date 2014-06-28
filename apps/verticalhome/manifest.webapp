@@ -52,6 +52,10 @@
     "collections_store": {
       "readonly": false,
       "description": "Display collections"
+    },
+    "favorites_store": {
+      "readonly": false,
+      "description": "Display favorites"
     }
   },
   "datastores-owned": {

@@ -164,6 +164,9 @@
   "datastores-owned": {
     "Gaia_Facebook_Friends": {
       "description": "Imported Facebook Friends"
+    },
+    "favorites_store": {
+      "description": "Favorite contacts"
     }
   },
 

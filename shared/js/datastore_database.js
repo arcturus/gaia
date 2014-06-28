@@ -35,7 +35,7 @@
         return;
       }
 
-      navigator.getDataStores(DB.STORE_NAME, function (stores) {
+      navigator.getDataStores(DB.STORE_NAME).then(function (stores) {
         if (!stores || !Array.isArray(stores) || stores.length < 1) {
           reject('Could not access datastore ' + DB.STORE_NAME);
           DB.storeState = 'failed';
@@ -166,7 +166,8 @@
       }
 
       init(self).then(function onInitialized() {
-        self.store.put(data, data.id).then(resolve, reject);
+        self.store.put(JSON.parse(JSON.stringify(data)),
+         data.id).then(resolve, reject);
       }, reject);
     });
   };
