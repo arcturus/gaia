@@ -15,6 +15,7 @@
 /* global WebrtcClient */
 /* global utils */
 /* global TAG_OPTIONS */
+/* global FavoritesDatabase */
 
 var contacts = window.contacts || {};
 
@@ -107,7 +108,7 @@ contacts.Details = (function() {
     if (WebrtcClient) {
       getWebrtcClientResources(WebrtcClient.stop);
     }
-    
+
     if (ActivityHandler.currentlyHandling) {
       ActivityHandler.postCancel();
       Contacts.navigation.home();
@@ -251,9 +252,9 @@ contacts.Details = (function() {
 
     renderPhones(contact);
     renderEmails(contact);
-    
+
     renderWebrtcClient(contactData);// Don't share the FB info
-    
+
     renderAddresses(contact);
 
     renderDates(contact);
@@ -293,10 +294,12 @@ contacts.Details = (function() {
     if (favorite) {
       contact.category = contact.category || [];
       contact.category.push('favorite');
+      FavoritesDatabase.add(contact).then(undefined, undefined);
     } else {
       if (!contact.category) {
         return;
       }
+      FavoritesDatabase.remove(contact.id).then(undefined, undefined);
       var pos = contact.category.indexOf('favorite');
       if (pos > -1) {
         contact.category.splice(pos, 1);

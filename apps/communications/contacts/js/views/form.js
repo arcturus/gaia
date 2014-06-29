@@ -10,6 +10,7 @@
 /* global Normalizer */
 /* global utils */
 /* global TAG_OPTIONS */
+/* global FavoritesDatabase */
 
 var contacts = window.contacts || {};
 
@@ -155,7 +156,7 @@ contacts.Form = (function() {
 
   var init = function cf_init(tags, currentDom) {
     dom = currentDom || document;
-  
+
     _ = navigator.mozL10n.get;
     initContainers();
 
@@ -865,6 +866,11 @@ contacts.Form = (function() {
     });
   };
 
+  function isFavorite(contact) {
+    return contact != null && contact.category != null &&
+              contact.category.indexOf('favorite') != -1;
+  }
+
   var doSave = function doSave(contact, noTransition) {
     // Deleting auxiliary objects created for dates
     delete contact.date;
@@ -881,6 +887,10 @@ contacts.Form = (function() {
         Contacts.cancel();
       }
       Contacts.setCurrent(contact);
+
+      if (isFavorite(contact)) {
+        FavoritesDatabase.put(contact).then(undefined, undefined);
+      }
     };
 
     request.onerror = function onerror() {

@@ -522,6 +522,15 @@ var Contacts = (function() {
     showForm();
   };
 
+  function loadStoreAndFacebook(callback) {
+    LazyLoader.load([
+      '/shared/js/datastore_database.js',
+      '/shared/js/favorites_database.js'],
+    function() {
+      loadFacebook(callback);
+    });
+  }
+
   var loadFacebook = function loadFacebook(callback) {
     if (!fbLoader.loaded) {
       fb.init(function onInitFb() {
@@ -859,8 +868,8 @@ var Contacts = (function() {
   var dependencies = {
     views: {
       Settings: loadFacebook,
-      Details: loadFacebook,
-      Form: loadFacebook
+      Details: loadStoreAndFacebook,
+      Form: loadStoreAndFacebook
     },
     utilities: {},
     sharedUtilities: {}
