@@ -43,7 +43,7 @@
         }
 
         DB.store = stores[0];
-        DB.store.addEventListener('change', DB.onChangeHandler);
+        DB.store.addEventListener('change', DB.onChangeHandler.bind(DB));
         DB.storeState = 'initialized';
         document.dispatchEvent(new CustomEvent(DB.STORE_EVENT));
         resolve();
@@ -99,7 +99,7 @@
   };
 
   DataStoreDatabase.prototype.onChangeHandler = function onchangeHandler(evt) {
-    var operation = event.operation;
+    var operation = evt.operation;
     var callbacks = this.listeners[operation];
     var self = this;
     callbacks && callbacks.forEach(function iterCallback(callback) {
@@ -130,7 +130,7 @@
         method: cb,
         context: context
       });
-      init();
+      init(this);
     }
   };
 
@@ -166,8 +166,15 @@
       }
 
       init(self).then(function onInitialized() {
-        self.store.put(JSON.parse(JSON.stringify(data)),
-         data.id).then(resolve, reject);
+        self.store.add(self.adaptData(data), data.id).then(
+          function success() {
+            resolve(true);
+          },
+          function nosuccess() {
+            self.store.put(self.adaptData(data),
+             data.id).then(resolve, reject);
+          }
+        );
       }, reject);
     });
   };
@@ -192,6 +199,10 @@
         self.store.remove(id).then(resolve, reject);
       }, reject);
     });
+  };
+
+  DataStoreDatabase.prototype.adaptData = function adaptData(data) {
+    return data;
   };
 
   exports.DataStoreDatabase = DataStoreDatabase;

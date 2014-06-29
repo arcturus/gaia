@@ -166,6 +166,7 @@
       "description": "Imported Facebook Friends"
     },
     "favorites_store": {
+      "access": "readwrite",
       "description": "Favorite contacts"
     }
   },

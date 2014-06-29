@@ -2,6 +2,7 @@
 /* global ApplicationSource */
 /* global BookmarkSource */
 /* global CollectionSource */
+/* global FavoriteSource */
 /* global configurator */
 /* global dispatchEvent */
 /* global GaiaGrid */
@@ -109,9 +110,10 @@
     this.applicationSource = new ApplicationSource(this);
     this.bookmarkSource = new BookmarkSource(this);
     this.collectionSource = new CollectionSource(this);
+    this.favoriteSource = new FavoriteSource(this);
 
     this.sources = [this.applicationSource, this.bookmarkSource,
-                    this.collectionSource];
+                    this.collectionSource, this.favoriteSource];
 
     this.ready = false;
 
