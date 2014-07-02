@@ -1,6 +1,8 @@
 'use strict';
 /* global Curtain */
 /* global LazyLoader */
+/* global utils */
+/* global fbLoader */
 
 var contacts = window.contacts || {};
 
@@ -31,7 +33,11 @@ if (!contacts.MatchingController) {
     window.addEventListener('localized', function localized(evt) {
       window.removeEventListener('localized', localized);
       // The controller is started when the literals are available
-      start(window.location.search.substring('contactId'.length + 2));
+      window.addEventListener('facebookLoaded', function fbLoaded(){
+        window.removeEventListener('facebookLoaded', fbLoaded);
+        start(window.location.search.substring('contactId'.length + 2));
+      });
+      fbLoader.load();
     });
 
     function start(cid) {
@@ -63,9 +69,10 @@ if (!contacts.MatchingController) {
 
       var matcherDependencies = ['/shared/js/text_normalizer.js',
                                  '/shared/js/simple_phone_matcher.js',
+                                 '/contacts/js/utilities/others.js',
                                  '/shared/js/contacts/contacts_matcher.js'];
       LazyLoader.load(matcherDependencies, function loaded() {
-        parent.contacts.List.getContactById(cid, function success(mContact) {
+        utils.getContactById(cid, function success(mContact) {
           // Master contact
           contact = mContact;
           contacts.Matcher.match(contact, 'active', callbacks);
@@ -97,7 +104,7 @@ if (!contacts.MatchingController) {
         };
 
         Object.keys(duplicateContacts).forEach(function(cid) {
-          parent.contacts.List.getContactById(cid, function success(contact) {
+          utils.getContactById(cid, function success(contact) {
             duplicateContacts[cid] = {
               matchingContact: contact,
               matchings: duplicateContacts[cid].matchings
