@@ -11,7 +11,7 @@
 /* global utils */
 /* global TAG_OPTIONS */
 /* global navigationStackShim */
-/* global messageBroadcaster */
+/* global MessageBroadcaster */
 
 var contacts = window.contacts || {};
 
@@ -65,6 +65,8 @@ contacts.Form = (function() {
   var PHOTO_HEIGHT = 320;
 
   var touchstart = 'ontouchstart' in window ? 'touchstart' : 'mousedown';
+
+  var messageBroadcaster = new MessageBroadcaster();
 
   var textFieldsCache = {
     _textFields: null,

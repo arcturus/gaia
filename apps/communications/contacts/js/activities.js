@@ -5,13 +5,14 @@
 /* global utils */
 /* global ActionMenu */
 /* global contacts */
-/* global messageBroadcaster */
+/* global MessageBroadcaster */
 
 /* exported ActivityHandler */
 
 'use strict';
 
 var ActivityHandler = {
+  _messageBroadcaster: null,
   _currentActivity: null,
 
   _launchedAsInlineActivity: (window.location.search == '?pick'),
@@ -93,7 +94,10 @@ var ActivityHandler = {
         // view (we cannot send contact object) we get the contact object
         // using utils.getContactById() and send it further, to the current
         // activity.
-        messageBroadcaster.on(
+        if (this.messageBroadcaster === null) {
+          this.messageBroadcaster = new MessageBroadcaster();
+        }
+        this.messageBroadcaster.on(
           'activity-post-new-success',
           function(id) {
             utils.getContactById(id, function success(mContact) {

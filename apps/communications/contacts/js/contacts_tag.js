@@ -1,12 +1,13 @@
 'use strict';
 /* global utils */
-/* global messageBroadcaster */
+/* global MessageBroadcaster */
 /* exported ContactsTag */
 
 var ContactsTag = (function() {
   var originalTag = null;
   var selectedTag = null;
   var customTag = null;
+  var messageBroadcaster = null;
 
   var setCustomTag = function setCustomTag(element) {
     customTag = element;
@@ -104,6 +105,10 @@ var ContactsTag = (function() {
     } else if (customTag.value.length > 0) {
       tagData.textContent = customTag.value;
       tagData.dataset.value = customTag.value;
+    }
+
+    if (messageBroadcaster === null) {
+      messageBroadcaster = new MessageBroadcaster();
     }
 
     messageBroadcaster.fire('value-modified', tagData);

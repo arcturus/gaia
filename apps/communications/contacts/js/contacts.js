@@ -11,7 +11,7 @@
 /* global SmsIntegration */
 /* global utils */
 /* global TAG_OPTIONS */
-/* global messageBroadcaster */
+/* global MessageBroadcaster */
 
 /* exported COMMS_APP_ORIGIN */
 /* exported SCALE_RATIO */
@@ -39,6 +39,8 @@ var Contacts = (function() {
   var goToForm = function edit() {
     navigation.go('view-contact-form', 'popup');
   };
+
+  var messageBroadcaster = null;
 
   var contactTag,
       settings,
@@ -561,6 +563,7 @@ var Contacts = (function() {
   };
 
   var initBroadcastedMessages = function() {
+    messageBroadcaster = new MessageBroadcaster();
     messageBroadcaster.on('go-to-select-tag', goToSelectTag);
     messageBroadcaster.on('set-current-contact', function(data) {
       utils.getContactById(data.id, setCurrent);
@@ -578,11 +581,11 @@ var Contacts = (function() {
 
   var addAsyncScripts = function addAsyncScripts() {
     var lazyLoadFiles = [
+      '/contacts/js/broadcast_message.js',
       '/contacts/js/utilities/confirm_dialog.js',
       '/shared/js/contacts/utilities/templates.js',
       '/shared/js/contacts/contacts_shortcuts.js',
       '/contacts/js/contacts_tag.js',
-      '/contacts/js/broadcast_message.js',
       '/contacts/js/utilities/load_fb.js',
       '/contacts/js/utilities/others.js',
       '/contacts/js/tag_options.js',
