@@ -101,7 +101,7 @@ contacts.List = (function() {
     monitor && monitor.pauseMonitoringMutations();
     renderLoadedContact(row, id);
     updateRowStyle(row, true);
-    renderPhoto(row, id);
+    renderPhoto(row, id, false, group);
     updateSingleRowSelection(row, id);
 
     // Since imgLoader.reload() causes sync reflows we only want to make this
@@ -850,14 +850,16 @@ contacts.List = (function() {
   // "Render" the photo by setting the img tag's dataset-src attribute to the
   // value in our photo cache.  This in turn will allow the imgLoader to load
   // the image once we have stopped scrolling.
-  var renderPhoto = function renderPhoto(link, id, asClone) {
+  var renderPhoto = function renderPhoto(link, id, asClone, group) {
     id = id || link.dataset.uuid;
+    var img = link.querySelector('aside > span[data-type=img]');
+
     var photo = photosById[id];
     if (!photo) {
+      renderDefaultPhoto(img, photo, link, group);
       return;
     }
 
-    var img = link.querySelector('aside > span[data-type=img]');
     if (img) {
       setImageURL(img, photo, asClone);
       return;
@@ -875,6 +877,29 @@ contacts.List = (function() {
     setImageURL(img, photo);
 
     link.insertBefore(figure, link.children[0]);
+    return;
+  };
+
+  var renderDefaultPhoto =
+    function renderDefaultPhoto(img, photo, link, group) {
+    photoTemplate = document.createElement('aside');
+    photoTemplate.className = 'pack-end';
+    img = document.createElement('span');
+    img.dataset.type = 'img';
+    img.dataset.group = group;
+    var posH = ['left','center','right'];
+    var posV = ['top','center','bottom'];
+    var position =
+      posH[Math.floor(Math.random()*3)] + ' ' +
+      posV[Math.floor(Math.random()*3)];
+
+    img.style.backgroundPosition = position;
+    photoTemplate.appendChild(img);
+
+    var figure = photoTemplate.cloneNode(true);
+    img = figure.children[0];
+
+    link.insertBefore(photoTemplate, link.children[0]);
     return;
   };
 
