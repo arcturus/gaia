@@ -544,6 +544,82 @@
       }.bind(this));
     };
 
+  AppChrome.prototype.checkLocationBlocked =
+   function ac_checkLoactionBlocked() {
+    this.cleanBlocked();
+    // Perform a query to check the data about the current
+    // url to blocked.org.uk
+    if (!(this._currentURL.startsWith('http') ||
+	 this._currentURL.startsWith('https'))) {
+      //console.log('FJJ ::: Stoping cause not valid url ' + this._currentURL);
+      return;
+    }
+    var xhr = new XMLHttpRequest({ mozSystem: true, mozAnon: true });
+    var checkBlockedUrl = 'https://www.blocked.org.uk/results?url=' +
+	 this._currentURL;
+    //console.log('FJJ ::: Checking url ' + checkBlockedUrl);
+    xhr.open('GET', checkBlockedUrl, true);
+    var self = this;
+    xhr.onload = function onLoad(e) {
+      if (!(xhr.status === 0 || xhr.status === 200)) {
+        return;
+      }
+
+      // Parse the information about different ISPs
+      var data = '' + xhr.response;
+      self.blockedInfo = xhr.response;
+      
+      var anchor = 
+	'<table class="table table-hover table-striped table-bordered">';
+      var found = data.indexOf(anchor);
+      if (found < 0) {
+        console.info('We dont have data for ' + self._currentURL);
+        return;
+      }
+      
+      var endAnchor = '</table>';
+      var length = data.indexOf(endAnchor, found) - found + endAnchor.length;
+      data = data.substr(found, length);
+
+      // Lookup for the different components
+      var elem = document.createElement('div');
+      elem.innerHTML = data;
+
+      var elems = elem.querySelectorAll('tr td:nth-child(2)');
+      elems = [].slice.call(elems);
+      elems.shift();
+      self.blocked = false;
+      elems.forEach(function(e) {
+        self.blocked = self.blocked || e.textContent !== 'ok';
+      });
+
+      if (self.blocked) {
+        self.notifyBlocked();
+      }
+    };
+    xhr.onerror = function onError(e) {
+      console.error('FJJ error ', e);
+    };
+    xhr.send();
+  };
+
+  AppChrome.prototype.notifyBlocked = function ac_notifyBlocked() {
+    if (!this.menuButton) {
+      return;
+    }
+    this.menuButton.classList.add('menu-blocked');
+    this.menuButton.classList.remove('menu-button');
+  };
+
+  AppChrome.prototype.cleanBlocked = function ac_cleanBlocked() {
+    this.blocked = false;
+    if (!this.menuButton) {
+      return;
+    }
+    this.menuButton.classList.add('menu-button');
+    this.menuButton.classList.remove('menu-blocked');
+  };
+
   AppChrome.prototype.handleLocationChanged =
     function ac_handleLocationChange(evt) {
       if (!this.app) {
@@ -555,6 +631,8 @@
       setTimeout(this._updateLocation.bind(this, evt.detail),
                  this.LOCATION_COALESCE);
       this._currentURL = evt.detail;
+
+      this.checkLocationBlocked();
 
       if (this.backButton && this.forwardButton) {
         this.app.canGoForward(function forwardSuccess(result) {

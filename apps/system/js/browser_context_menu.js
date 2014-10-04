@@ -314,6 +314,16 @@
     return new Promise((resolve) => {
       var config = this.app.config;
       var menuData = [];
+      var isBlocked = this.app.appChrome.blocked;
+
+      if (isBlocked) {
+        var site = 'https://www.blocked.org.uk/results?url=' + config.url;
+        menuData.push({
+          id: 'blocked-site',
+          label: 'Check blocked.org.uk',
+          callback: this.openUrl.bind(this, site)
+        });
+      }
 
       menuData.push({
         id: 'new-window',

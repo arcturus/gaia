@@ -330,6 +330,10 @@
   background-image: url("images/dark/options.png");
 }
 
+.controls .menu-blocked {
+  background-image: url("images/dark/options_blocked.png") !important;
+}
+
 .controls .menu-button:active {
   background-image: url("images/dark/options_active.png");
 }
@@ -381,6 +385,10 @@
 
 .light .controls .menu-button {
   background-image: url("images/light/options.png");
+}
+
+.light .controls .menu-blocked {
+  background-image: url("images/light/options_blocked.png") !important;
 }
 
 .light .controls .menu-button:active {
