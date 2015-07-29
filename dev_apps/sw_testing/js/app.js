@@ -21,7 +21,7 @@ function measureLoadFromPackage() {
 
 function measureLoadFromHttpCache() {
   clear();
-  fetch('/img/test.png', { cache: 'default' })
+  fetch('/img/test.png', { cache: 'force-cache' })
     .then(() => measureLoad('/img/test.png', { cache: 'force-cache' }));
 }
 
