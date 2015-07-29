@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "name": "sw_testing",
+  "name": "SW Testing",
   "description": "An packaged app to test SW in B2G",
   "launch_path": "/index.html",
   "icons": {

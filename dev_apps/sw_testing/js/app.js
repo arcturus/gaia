@@ -1,52 +1,36 @@
-window.addEventListener('DOMContentLoaded', function() {
+var $ = document.querySelector.bind(document);
+var img = $('img');
 
-  'use strict';
+$('#load-from-package').onclick = () => {
+  measureLoadFromPackage();
+};
 
-  var img = document.getElementById('theImage');
-  var measureImageLoadButton = document.getElementById('measureImageLoad');
-  var measureImageLoadSWButton = document.getElementById('measureImageLoadSW');
-  
-  function clean() {
-    img.src = '';
-    performance.clearMarks();
-    performance.clearMeasures();
-  }
-  
-  /**
-   * Perform a request to the network, setup the mark when we setup the image src and
-   * the second mark just when we detect that has been loaded.
-   */
-  function measureImageLoad() {
-   clean();
-   img.onload = function() {
-     performance.measure('image_loaded', 'image_load_start');
-     var entries = performance.getEntriesByName('image_loaded');
-     var entry = entries[0];
-     console.log(entry);
-     alert('Duration: ' + entry.duration);
-   };
-   img.src = '/img/test.png';
-   performance.mark('image_load_start');
-  }
-  
-  function installSW() {
-    navigator.serviceWorker.register('sw.js').then(null, function(err) {
-      alert(err);
-    });
-  }
-  
-  function measureImageLoadSW() {
-    navigator.serviceWorker.getRegistration().then(reg => {
-      if (reg && reg.active) {
-        measureImageLoad();
-      }
-      navigator.serviceWorker.addEventListener('controllerchange', function(evt) {
-        measureImageLoad();
-      });
-      installSW();
-    });
-  }
-  
-  measureImageLoadButton.addEventListener('click', measureImageLoad);
-  measureImageLoadSWButton.addEventListener('click', measureImageLoadSW);
-});
+$('#load-from-http-cache').onclick = () => {
+  measureLoadFromHttpCache();
+};
+
+function clear() {
+  performance.clearMarks();
+  performance.clearMeasures();
+}
+
+function measureLoadFromPackage() {
+  clear();
+  measureLoad('/img/test.png', { cache: 'no-cache' });
+}
+
+function measureLoadFromHttpCache() {
+  clear();
+  fetch('/img/test.png', { cache: 'default' })
+    .then(() => measureLoad('/img/test.png', { cache: 'force-cache' }));
+}
+
+function measureLoad(url, options) {
+  fetch(url, options).then(() => {
+    performance.measure('resource_load', 'resource_load_start');
+    var m = performance.getEntriesByName('resource_load')[0];
+    console.log('resource_load', m);
+    alert('resource_load: ' + m.duration);
+  });
+  performance.mark('resource_load_start');
+}

@@ -1,6 +1,7 @@
 html, body {
+  font-size: 62.5%;
   margin: 0;
-  padding: 0.5rem;
+  padding: 0;
 }
 
 body {
@@ -8,6 +9,7 @@ body {
   background: #fff;
 }
 
-.hidden {
-  display: none;
+iframe {
+  border: none;
+  height: 10rem;
 }
