@@ -63,6 +63,7 @@ function showResults(measure) {
       'deviation: ' + deviation,
       'bandwidth: ' + bandwidth + ' bytes per second'
     ].join('\n'));
+    document.dispatchEvent(new CustomEvent('resultsDone'));
   };
 }
 

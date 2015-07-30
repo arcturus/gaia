@@ -3,7 +3,6 @@ addEventListener('activate', function(evt) {
 });
 
 addEventListener('fetch', function(evt) {
-  console.log('Intercepting ' + evt.request.url);
   evt.respondWith(fetch(evt.request));
 });
 
