@@ -4,8 +4,8 @@ addEventListener('activate', function(evt) {
   var operations = [];
   operations.push(self.clients.claim());
   operations.push(cachePromise.then(cache => {
-    cache.addAll(['/img/test.png', '/precached/install-sw.js',
-    '/precache/precached.html']);
+    return cache.addAll(['/img/test.png', '/precached/install-sw.js',
+    '/precached/precached.html']);
   }));
   evt.waitUntil(Promise.all(operations));
 });

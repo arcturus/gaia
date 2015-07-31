@@ -7,9 +7,12 @@ $('#load-from-package').onclick = () => {
   measureLoadFromPackage();
 };
 
-$('#load-from-http-cache').onclick = () => {
-  measureLoadFromHttpCache();
-};
+var httpCacheBtn = $('#load-from-http-cache');
+if (httpCacheBtn) {
+  httpCacheBtn.onclick = () => {
+    measureLoadFromHttpCache();
+  };
+}
 
 function clear() {
   performance.clearMeasures();
