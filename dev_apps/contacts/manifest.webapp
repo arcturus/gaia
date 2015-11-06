@@ -2,12 +2,11 @@
   "name": "Contacts",
   "description": "Gaia Contacts",
   "type": "certified",
-  "launch_path": "/",
   "developer": {
     "name": "The Gaia Team",
     "url": "https://github.com/mozilla-b2g/gaia"
   },
-  "launch_path": "/views/list/list.html",
+  "launch_path": "/views/new_list/index.html",
   "name": "Contacts",
   "icons": {
     "84": "/style/icons/contacts_84.png",
