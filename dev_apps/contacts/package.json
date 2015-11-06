@@ -1,0 +1,10 @@
+{
+  "webide": {
+    "prepackage": {
+      "command": "make",
+      "env": ["APP=contacts"],
+      "cwd": "../.."
+    },
+    "packageDir": "../../build_stage/contacts/"
+  }
+}
