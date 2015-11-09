@@ -3,6 +3,11 @@
 (function(exports) {
 
   var list = document.querySelector('gaia-fast-list');
+  list.addEventListener('rendered', () => {
+    window.performance.mark('visuallyLoaded');
+    window.performance.mark('contentInteractive');
+    window.performance.mark('fullyLoaded');
+  });
 
   var stringToColour = function(str) {
     var base = [82, 186, 209];
@@ -174,7 +179,7 @@
 
   function start() {
     return fetchAllContacts().then(() => {
-      list.complete();
+      //list.complete();
     });
   }
 
@@ -185,4 +190,6 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   ContactsList.start();
+  window.performance.mark('navigationLoaded');
+  window.performance.mark('navigationInteractive');
 });
