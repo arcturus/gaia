@@ -3,7 +3,7 @@
 (function(exports) {
 
   var list = document.querySelector('gaia-fast-list');
-  list.addEventListener('rendered', () => {
+  list.rendered.then(() => {
     window.performance.mark('visuallyLoaded');
     window.performance.mark('contentInteractive');
     window.performance.mark('fullyLoaded');
@@ -26,7 +26,7 @@
 
   list.configure({
     getSectionName: getSectionName,
-    getItemImageSrc: getImage
+    //getItemImageSrc: getImage
   });
 
   list.addEventListener('click', evt => {
@@ -179,7 +179,7 @@
 
   function start() {
     return fetchAllContacts().then(() => {
-      //list.complete();
+      list.cache();
     });
   }
 

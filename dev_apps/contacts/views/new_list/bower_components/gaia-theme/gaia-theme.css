@@ -86,6 +86,11 @@ Gaia theme variables
    ---------------------------------------------------------*/
 
   --transition-duration: 0.2s;
+
+  /** Overlay
+   ---------------------------------------------------------*/
+
+  --overlay-background: rgba(199,199,199,0.85);
 }
 
 
@@ -243,4 +248,9 @@ Gaia theme variables
 
    --button-box-shadow: none;
    --button-box-shadow-active: none;
+
+   /** Overlay
+   ---------------------------------------------------------*/
+
+   --overlay-background: rgba(199,199,199,0.5);
 }
