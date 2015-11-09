@@ -91,7 +91,7 @@
   }
 
   function appendToList(data) {
-    list.model = data;
+    list.setModel(data);
   }
 
   function getOrg(contact) {
