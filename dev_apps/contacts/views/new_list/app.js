@@ -26,7 +26,7 @@
 
   list.configure({
     getSectionName: getSectionName,
-    //getItemImageSrc: getImage
+    getItemImageSrc: getImage
   });
 
   list.addEventListener('click', evt => {
@@ -45,7 +45,7 @@
       return null;
     }
 
-    return window.URL.createObjectURL(data.image);
+    return data.image;
   }
 
   function getSectionName(item) {
