@@ -151,6 +151,9 @@
       }
 
       this.doReloadContactDetails(this.contactData);
+
+      // Pin data
+      ContactsPin.pinData(currentContact);
     },
 
     doReloadContactDetails: function(contact) {

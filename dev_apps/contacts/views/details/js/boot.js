@@ -34,7 +34,8 @@ window.onload = function() {
     '/shared/js/contacts/import/utilities/misc.js',
     '/views/details/js/details_ui.js',
     '/views/details/js/details_controller.js',
-    '/shared/pages/import/js/curtain.js'
+    '/shared/pages/import/js/curtain.js',
+    '/services/pinning.js'
   ];
 
   LazyLoader.load(dependencies).then(function() {
