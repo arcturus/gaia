@@ -27,6 +27,7 @@ var jsdom = require('jsdom-nogyp');
 var esprima = require('esprima');
 var procRunning = require('is-running');
 var mime = require('mime');
+var pp = require('preprocess');
 
 // Our gecko will transfer .opus file to audio/ogg datauri type.
 mime.define({'audio/ogg': ['opus']});
@@ -46,6 +47,8 @@ jsdom.dom.level3.html.Element.prototype.__defineSetter__('outerHTML',
 
 module.exports = {
   Q: Q,
+
+  preprocess: pp,
 
   scriptParser: esprima,
 

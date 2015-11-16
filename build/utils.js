@@ -288,6 +288,9 @@ var gaia = {
 
 
 exports.Q = utils.Q;
+if (utils.preprocess) {
+  exports.preprocess = utils.preprocess;
+}
 exports.isSubjectToBranding = isSubjectToBranding;
 exports.isSubjectToDeviceType = isSubjectToDeviceType;
 exports.ls = utils.ls;
